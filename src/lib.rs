@@ -13,6 +13,12 @@
 //! | [`version`] | build-time source provenance, and the agreement assertion |
 //! | [`config`] | the precedence ORDER — flag > env > file > default, and unioned search paths |
 //!
+//! One further module is **off by default**: [`self_update`] (feature
+//! `self-update`) owns the install-channel detection and upgrade dispatch moved
+//! from `quire-cli`. It adds no dependency; what it adds is the ability to
+//! spawn an external package manager, which is a capability a consumer must be
+//! able to decline. See that module's header.
+//!
 //! [`config`] owns the order and never the locations: the ecosystem's default
 //! module root is `~/.ix/filament/modules`, and a shared crate that decided
 //! paths on a consumer's behalf would relocate installs that two tools already
@@ -52,6 +58,8 @@
 pub mod config;
 pub mod exit;
 pub mod json;
+#[cfg(feature = "self-update")]
+pub mod self_update;
 pub mod streams;
 pub mod version;
 

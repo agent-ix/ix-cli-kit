@@ -16,6 +16,25 @@ publish = false
 name = "ix_cli_kit"
 path = "src/lib.rs"
 
+# `self-update` is OFF by default, per owner ruling. It adds no dependency at
+# all — the module is std-only (`std::process::Command`) — so the gate is not
+# about the dependency graph. It is about a CAPABILITY: with the feature off,
+# this crate contains no code that can spawn an external program or hand it
+# this process's stdio, and a consumer that only wants an exit taxonomy can
+# decline that surface. The roadmap's earlier prediction of "npm, tar and
+# network surface" did not survive contact with the code being moved; see
+# `src/self_update.rs`.
+[features]
+default = []
+self-update = []
+
+# A fixture, not a product. Built only with the feature it exercises, so the
+# default build produces no binary that can shell out.
+[[bin]]
+name = "self_update_fixture"
+path = "src/bin/self_update_fixture.rs"
+required-features = ["self-update"]
+
 # Caret ranges, not `=` pins, and the reason is in src/lib.rs's header: two
 # exact pins on one crate cannot coexist in a graph, so a shared crate that
 # pinned exactly would make adoption a lockstep version migration. The floor is
