@@ -448,6 +448,7 @@ mod tests {
 
     use super::*;
 
+    /// Trace: FR-013-AC-1
     #[test]
     fn diagnostics_format_parses() {
         assert_eq!(
@@ -461,6 +462,8 @@ mod tests {
         assert!(DiagnosticsFormat::from_str("yaml").is_err());
     }
 
+    /// Trace: FR-013-AC-2
+    /// Trace: FR-005-AC-3
     #[test]
     fn color_choice_parses() {
         assert_eq!(ColorChoice::from_str("auto").unwrap(), ColorChoice::Auto);
@@ -472,6 +475,7 @@ mod tests {
         assert!(ColorChoice::from_str("rainbow").is_err());
     }
 
+    /// Trace: FR-013-AC-3
     #[test]
     fn an_unparseable_selector_names_the_value_it_rejected() {
         assert_eq!(
@@ -484,6 +488,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-005-AC-1
     // The pure form is the one a TUI calls with its own facts, so it is pinned
     // against every combination rather than against this process's stderr.
     #[test]
@@ -500,6 +505,7 @@ mod tests {
         }
     }
 
+    /// Trace: FR-005-AC-2
     #[test]
     fn resolving_keeps_the_facts_the_decision_was_made_from() {
         let decision = ColorChoice::Never.resolve();
@@ -511,6 +517,7 @@ mod tests {
         assert!(ColorChoice::Always.resolve().enabled);
     }
 
+    /// Trace: FR-004-AC-1
     #[test]
     fn a_human_error_renders_byte_for_byte_the_message() {
         let record = Record::error("Broken", "spec/FR-001.md:12: missing criteria");
@@ -524,6 +531,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-004-AC-2
     #[test]
     fn a_human_warning_is_prefixed_so_it_is_not_read_as_an_error() {
         assert_eq!(
@@ -532,6 +540,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-004-AC-3
     #[test]
     fn the_json_shape_carries_severity_kind_and_typed_fields() {
         let record = Record::error("Unbacked", "row has no test").with_fields(DiagnosticFields {
@@ -545,6 +554,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-004-AC-4
     // Rendering and emitting are separable, and this is the assertion that
     // keeps them so: a sink that is not a process stream gets the same bytes.
     #[test]
@@ -557,6 +567,7 @@ mod tests {
         assert_eq!(String::from_utf8(sink).unwrap(), "one line\n");
     }
 
+    /// Trace: FR-003-AC-3
     #[test]
     fn a_result_line_writes_to_an_arbitrary_sink_uncoloured() {
         let mut sink = Vec::new();
