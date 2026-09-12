@@ -21,6 +21,8 @@ use ix_cli_kit::Outcome;
 
 const FIXTURE: &str = env!("CARGO_BIN_EXE_version_fixture");
 
+/// Trace: FR-003-AC-1
+/// Trace: FR-003-AC-2
 /// `tc_010`: the payload lands on stdout, the diagnostic lands on stderr, and
 /// neither appears on the other stream.
 #[test]
@@ -45,6 +47,7 @@ fn tc_010_results_go_to_stdout_and_diagnostics_go_to_stderr() {
     );
 }
 
+/// Trace: FR-001-AC-2
 /// `tc_011`: a run with findings exits `Partial` (1) and still carries a complete
 /// payload. This is the distinction three of five surveyed CLIs invented
 /// independently and none of them could express in its exit code.
@@ -61,6 +64,7 @@ fn tc_011_findings_present_exits_partial_and_still_carries_a_payload() {
     assert_eq!(parsed["alpha"]["a"], 1);
 }
 
+/// Trace: FR-006-AC-5
 /// `tc_012`: results are emitted canonically — keys sorted at every depth — so a
 /// consumer can diff two runs byte for byte.
 #[test]
@@ -70,6 +74,7 @@ fn tc_012_the_emitted_payload_is_canonical_at_every_depth() {
     assert_eq!(stdout.trim_end(), r#"{"alpha":{"a":1,"b":2},"zeta":1}"#);
 }
 
+/// Trace: FR-001-AC-5
 /// `tc_013`: bad argv exits `Invalid` (3), not `Refused` (2). The two are
 /// different questions and the survey found the ecosystem answering them with
 /// the same number.

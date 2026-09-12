@@ -541,6 +541,7 @@ pub mod build {
 mod tests {
     use super::*;
 
+    /// Trace: FR-008-AC-1
     #[test]
     fn a_bare_version_and_a_v_prefixed_one_are_both_found() {
         assert_eq!(semver_in("0.2.0"), Some("0.2.0"));
@@ -548,6 +549,7 @@ mod tests {
         assert_eq!(semver_in("quire-corpus 0.2.0"), Some("0.2.0"));
     }
 
+    /// Trace: FR-008-AC-1
     // quire-cli's VERSION_LINE names two versions on one line, CLI first. The
     // helper must take the tool's, not the engine's.
     #[test]
@@ -558,17 +560,20 @@ mod tests {
         );
     }
 
+    /// Trace: FR-008-AC-2
     #[test]
     fn a_describe_suffix_travels_verbatim() {
         assert_eq!(semver_in("v0.45.0-3-g99e97f0"), Some("0.45.0-3-g99e97f0"));
     }
 
+    /// Trace: FR-008-AC-3
     #[test]
     fn text_without_a_triple_reports_nothing_rather_than_a_pair() {
         assert_eq!(semver_in("Usage: quire-corpus --root <ROOT>"), None);
         assert_eq!(semver_in("version 1.2"), None);
     }
 
+    /// Trace: FR-008-AC-8
     #[test]
     fn clean_tags_and_drifted_ones_are_distinguished() {
         assert!(is_clean_tag("v1.2.3"));
@@ -578,6 +583,7 @@ mod tests {
         assert!(!is_clean_tag("v1.2"));
     }
 
+    /// Trace: FR-008-AC-4
     #[test]
     fn agreeing_surfaces_pass() {
         let report = Agreement::new()
@@ -592,6 +598,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-008-AC-4
     // agent-ix/quire-cli#52: the 0.24.0–0.28.0 tags all shipped binaries
     // reporting 0.23.0. This is that defect, in a fixture.
     #[test]
@@ -608,6 +615,7 @@ mod tests {
         assert_eq!(versions["--version"], "0.23.0");
     }
 
+    /// Trace: FR-008-AC-5
     // A check that observed nothing must not report success. One surface is
     // one opinion, and an agreement of one is not an agreement.
     #[test]
@@ -626,6 +634,7 @@ mod tests {
         assert_eq!((reported, total), (1, 2));
     }
 
+    /// Trace: FR-008-AC-6
     #[test]
     fn a_command_that_cannot_be_run_reports_nothing_rather_than_passing() {
         let error = Agreement::new()
@@ -640,6 +649,7 @@ mod tests {
         assert!(matches!(error, Disagreement::Unverifiable { .. }));
     }
 
+    /// Trace: FR-007-AC-1
     #[test]
     fn source_state_round_trips_through_its_baked_spelling() {
         for state in [SourceState::Clean, SourceState::Dirty, SourceState::Unknown] {
@@ -651,6 +661,18 @@ mod tests {
         );
     }
 
+    /// Trace: FR-007-AC-3
+    #[test]
+    fn a_revision_abbreviates_to_its_first_eight_characters() {
+        let full = "0123456789abcdef0123456789abcdef01234567";
+        assert_eq!(full.len(), 40);
+        assert_eq!(short_revision(full), "01234567");
+        // Anything that is not a full revision is returned whole rather than
+        // truncated into something that looks like one.
+        assert_eq!(short_revision(UNKNOWN), UNKNOWN);
+    }
+
+    /// Trace: FR-007-AC-2
     #[test]
     fn a_directory_that_is_not_a_checkout_is_unknown_not_guessed() {
         let identity = source_identity(Path::new("/"));

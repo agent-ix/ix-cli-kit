@@ -19,6 +19,7 @@ use std::path::{Path, PathBuf};
 
 const EXPECTED: &str = "// SPDX-License-Identifier: AGPL-3.0-or-later";
 
+/// Trace: NFR-002-AC-1
 /// `tc_020`: every `.rs` file under the repository begins with the SPDX header.
 #[test]
 fn tc_020_every_rust_source_declares_its_licence() {

@@ -135,6 +135,7 @@ impl From<Outcome> for std::process::ExitCode {
 mod tests {
     use super::*;
 
+    /// Trace: FR-001-AC-1
     /// Provenance: agent-ix/quoin#103
     #[test]
     fn exit_statuses_are_the_documented_taxonomy() {
@@ -150,6 +151,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-001-AC-3
     #[test]
     fn every_status_round_trips() {
         for outcome in Outcome::ALL {
@@ -158,6 +160,7 @@ mod tests {
         assert_eq!(Outcome::from_code(5), None);
     }
 
+    /// Trace: FR-001-AC-2
     /// Provenance: agent-ix/quoin#103
     #[test]
     fn non_zero_but_valid_is_distinguishable_from_failed() {
@@ -168,6 +171,9 @@ mod tests {
         }
     }
 
+    /// Trace: FR-002-AC-1
+    /// Trace: FR-002-AC-2
+    /// Trace: FR-002-AC-3
     // The reservation is only worth something if nothing quietly claims it.
     #[test]
     fn the_reserved_command_not_found_status_is_claimed_by_nobody() {
@@ -180,6 +186,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-001-AC-4
     #[test]
     fn spellings_are_distinct_and_stable() {
         let spellings: Vec<&str> = Outcome::ALL.iter().map(|o| o.as_str()).collect();
