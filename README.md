@@ -1,0 +1,95 @@
+# ix-cli-kit
+
+## Name and scope
+
+- **It is a shared library of CLI plumbing**: exit-code taxonomy, version provenance, stream discipline, canonical JSON, config precedence.
+- **It is NOT a CLI, NOT a framework, and NOT a port of `ix-cli`.** It exports no root command type, no argv parsing, no TUI, and no command dispatch.
+- **`ix-cli` remains TypeScript** and is out of scope for this crate and for the Rust burn-down program.
+
+The name is deliberate and should not drift back. An earlier working name, `ix-cli-rs`, reads as "ix-cli, ported to Rust" — the opposite of what this crate is, and it produced exactly that misreading: `ix-cli` is a substantial TUI product with Kubernetes controls and animations, it is explicitly deferred, and nothing here touches it. `ix-cli-kit` is the ecosystem's own term rather than an invented one: `quire-cli/src/self_update/mod.rs:1-8` already says this code should move "behind a shared CLI kit crate."
+
+## What is in v0.1
+
+| module | what it owns |
+|---|---|
+| `exit` | the 0/1/2/3/4 exit taxonomy, and `carries_payload()` |
+| `streams` | results on stdout, diagnostics on stderr, colour resolution |
+| `json` | canonical (recursively key-sorted) JSON, and one encoder |
+| `version` | build-time source provenance, and the agreement assertion |
+| `config` | the precedence ORDER — flag > env > file > default, and unioned search paths |
+
+### `exit` — one taxonomy, adopted verbatim
+
+```
+0 Ok        1 Partial   2 Refused   3 Invalid   4 Internal
+```
+
+Ported from `quoin-core/src/protocol.rs:28-72`, tests and all. Five of five surveyed Rust CLIs had an exit taxonomy and all five differed: exit `2` means `ARGV_ERROR` in `quire-cli` (`src/io.rs:360`), a host error in `engineering-assurance` (`src/main.rs:917`), and `Refused` in `quoin-core`. Three of the five independently invented a "succeeded but found problems" status, which is why `Partial` is the load-bearing member: a non-zero status that still carries a complete payload. Callers ask `carries_payload()`, never `status == 0`.
+
+### `streams` — the measured defect this prevents
+
+Results go to stdout; diagnostics go to stderr; results are never coloured. The rationale comment carried over from `quire-cli/src/io.rs:206-221` records the incident rather than the intention: a run that produced a 0-byte stdout file while 90,462 bytes went to stderr.
+
+Rendering and emission are separable (`Record::render_human`, `Record::render_json`, `Record::write`) so a consumer that places its own output — a TUI — can use the same diagnostics without this crate choosing a sink. `ColorChoice::decide(is_terminal, no_color_set)` is pure, `ColorDecision` carries the facts behind the boolean, and `stdout_is_terminal()` / `stderr_is_terminal()` are exported. Nothing here opens an alternate screen, sets raw mode, asks terminal size or runs an event loop.
+
+### `json` — canonical means recursively key-sorted, explicitly
+
+`serde_json`'s `preserve_order` feature is unified across a Cargo graph. `quire-corpus` enables it and `quoin-core` deliberately does not, so a canonicaliser that relies on `BTreeMap` ordering is correct in one and silently wrong in the other. `json::canonical` sorts at every depth itself and is therefore correct under either feature set.
+
+### `version` — provenance, and the assertion nobody had
+
+Build-time `cargo:rustc-env` provenance ported from `quire-cli/build.rs:19-57`, plus the piece the ecosystem was missing in Rust: a reusable test helper asserting that `--version` and `--help` agree and that a clean tag reports itself. The only existing implementation was `quoin/scripts/check-version-agreement.mjs` — Node, checking the built binary rather than a source constant. `unknown` is never replaced with something plausible.
+
+### `config` — the order, not the locations
+
+**This crate decides the ORDER. The consumer decides the LOCATIONS.** Nothing in `config` writes or resolves a path the consumer did not name. XDG resolution is available as `config::xdg` for consumers that want it and is never the imposed default: the ecosystem's actual default module root is `~/.ix/filament/modules`, a dotdir that `quoin` materialises into and `quire-rs` reads by default, and a shared crate that imposed XDG would silently relocate a path two tools already agree on.
+
+Two shapes, because there are two kinds of setting:
+
+- `SearchPath` — **union**, ordered, deduplicated. For *where to look*.
+- `resolve` — **override**: flag > env > file > default. For a single *value*.
+
+Search roots union because that is the ported behaviour, and collapsing them into the override chain would drop one environment variable's roots entirely. Absent and malformed configuration are kept distinct, and a malformed file is reported with its path, line and column.
+
+## Roadmap: what is excluded, and exactly what promotes it
+
+v0.1 **extracts** code that existing CLIs already wrote independently, where correctness is provable by diffing against what exists. Everything below would be **designed** from scratch against zero or one consumer, and a shared crate designed against a single consumer is that consumer's code in a more expensive location. A capability qualifies for early promotion when it is a **MOVE rather than a DESIGN** — existing code whose correctness is provable by diffing against the original — even at a low consumer count. It also qualifies when every surveyed consumer *lacks* it **and that absence is a known gap rather than a known non-need**. Consumer count is the weakest of the three signals: it is a hint, not the test.
+
+The census that produced these counts asked "does it have a config FILE" and got 0 of 5. It never asked "does it RESOLVE configuration", which is a different question with a different answer — `quire-cli` already implements the full precedence chain by hand at `src/commands/validate.rs:485-520`. That is the reusable lesson: **count the behaviour, not the artefact.**
+
+| capability | Rust consumers today | what it would cost | named trigger |
+|---|---|---|---|
+| `self_update` | 1 (`quire-cli`) | npm/tar/network surface, release-channel policy, rollback | **COMMITTED — the next work item after v0.1 lands.** Owner ruling: "self-update will have many [consumers]." It will be **feature-gated, default OFF**, for one stated reason: it pulls npm, tar and network surface into a crate whose v0.1 has none, and a CLI that only wants exit codes must not inherit that. |
+| `config` | — | — | **PROMOTED INTO v0.1.** 1 of 5 already implements the precedence chain by hand, unioned, with an undocumented legacy alias (`IX_SCHEMA_PATH`). Promoted because it exists and is unowned. |
+| plugin / command dispatch | 0 | a command-resolution model, a `command_not_found` disposition, a plugin manifest contract | quoin `spec/functional/FR-102-command-surface-and-oclif-retirement.md` (AC-3 `command_not_found`, AC-4 plugin command resolution) reaches a decided disposition **and** a second Rust CLI needs it. Exit code `5` is reserved for `command_not_found` and deliberately not implemented: `exit::from_code(5)` returns `None`. |
+| secrets | 0 | a storage backend, a redaction contract, a rotation story | Not "count 0". Their shape is defined by what `ix-cli` needs, `ix-cli` is a TUI, and **nobody has specified what a TUI's credential flow looks like here.** Designing them now means designing them wrong. Trigger: a written credential-flow specification for the TUI. |
+| device-auth | 0 | a polling flow, token storage, refresh, revocation | Same reason as secrets, same trigger. |
+| marketplace | 0 | a registry protocol and a trust model | A registry protocol exists in specification and a Rust consumer needs to read it. |
+| stable error-code envelope | 0 | a numbering authority, a stability promise per code | Two consumers need machine-stable error identity beyond the five-member exit taxonomy. Until then `streams::DiagnosticFields` carries `reason` as free text. |
+
+## Consuming this crate
+
+Git-rev pin. One rev string. No vendoring, no tag pins, no crates.io — `publish = false` is declared explicitly in `Cargo.toml`.
+
+```toml
+[dependencies]
+ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", rev = "<40-hex sha>" }
+```
+
+A tag pin drifts from a rev pin the moment one repository uses each: the ecosystem already has `quire-rs/Cargo.toml:69` pinning `ix-trace-rs` by `tag = "v0.1.1"` while five other repositories pin `rev = 2ce4ebf…`, which is one dependency presenting as two.
+
+### Dependency versions
+
+Caret ranges floored at the ecosystem's highest observed pin (`serde 1.0.229`, `serde_json 1.0.151`, `thiserror 2.0.20`), not `=` pins. Two exact pins on one crate cannot coexist in a graph, so an `=`-pinned foundation would make adoption a lockstep version migration for every consumer. Leaf binaries keep their exact pins; this crate states a floor, and its own gates are reproducible from the committed `Cargo.lock`.
+
+There is **no `clap` dependency** and no exported `Parser`-derived root command. `engineering-assurance` compiles clap with `default-features = false` and no derive feature, so a foundation exporting a derived command could not be adopted there at all. Selector types implement `FromStr`, which `clap::value_parser!`, a hand-rolled argv loop and a config file all consume alike. The consequence is that the survey's hardest pin conflict — `clap =4.5.47` derive-off against `=4.6.0` derive-on — never reaches this crate.
+
+## Build
+
+```bash
+make ci     # fmt-check + lint + test + deny + audit-unsafe
+```
+
+## License
+
+AGPL-3.0-or-later

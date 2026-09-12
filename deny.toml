@@ -1,0 +1,28 @@
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+
+# Exactly the licences the current graph carries. A new dependency adds its
+# licence in the same commit; a generous list is a noisy one and enforces less.
+[licenses]
+version = 2
+confidence-threshold = 0.93
+allow = [
+  "AGPL-3.0-or-later",
+  "Apache-2.0",
+  "MIT",
+  "Unicode-3.0",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+# A git dependency is listed here or it is refused. This crate has none.
+unknown-git = "deny"
+allow-git = []

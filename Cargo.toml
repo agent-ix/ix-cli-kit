@@ -1,0 +1,50 @@
+[package]
+name = "ix-cli-kit"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98.1"
+description = "Shared Rust CLI foundation for the Agent-IX ecosystem: exit taxonomy, stream discipline, canonical JSON, and build-time version provenance."
+authors = ["Agent IX <dev@agent-ix.com>"]
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/agent-ix/ix-cli-kit"
+# No crates.io. Consumers git-rev pin this crate (see README, "Consuming this
+# crate"). Declared explicitly rather than left to default: the survey found 3
+# of 5 Rust repositories in this ecosystem silently publishable.
+publish = false
+
+[lib]
+name = "ix_cli_kit"
+path = "src/lib.rs"
+
+# Caret ranges, not `=` pins, and the reason is in src/lib.rs's header: two
+# exact pins on one crate cannot coexist in a graph, so a shared crate that
+# pinned exactly would make adoption a lockstep version migration. The floor is
+# the ecosystem's highest observed pin (engineering-assurance's). Leaf binaries
+# keep their `=` pins; this repository's own gates are reproducible from the
+# committed Cargo.lock.
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+
+[dev-dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"
+cast_possible_truncation = "warn"
+cast_sign_loss = "warn"
+cast_possible_wrap = "warn"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
