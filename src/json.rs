@@ -123,6 +123,8 @@ pub fn encode_canonical<T: Serialize + ?Sized>(
 mod tests {
     use super::*;
 
+    /// Trace: FR-006-AC-1
+    /// Trace: NFR-001
     #[test]
     fn canonical_sorts_keys_at_every_depth() {
         let value = serde_json::json!({ "z": 1, "a": { "y": 2, "b": 3 } });
@@ -132,6 +134,8 @@ mod tests {
         );
     }
 
+    /// Trace: FR-006-AC-2
+    /// Trace: NFR-001
     // quire-corpus's `sort_json` recursed into arrays; quoin-core got the same
     // behaviour free from `BTreeMap`. Under `preserve_order` only the explicit
     // recursion is doing the work, so it is asserted rather than assumed.
@@ -144,6 +148,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-006-AC-3
     // Assert the literal bytes, not a re-derivation: re-canonicalising the
     // expectation would agree with the code no matter what the code did.
     #[test]
@@ -155,6 +160,7 @@ mod tests {
         assert!(!encoded.contains('\n'));
     }
 
+    /// Trace: FR-006-AC-3
     #[test]
     fn encode_is_compact_by_default_and_indented_when_asked() {
         let value = serde_json::json!({ "a": 1, "b": 2 });
@@ -162,12 +168,14 @@ mod tests {
         assert!(encode(&value, true).unwrap().contains('\n'));
     }
 
+    /// Trace: FR-006-AC-1
     #[test]
     fn encode_canonical_sorts_and_encodes_in_one_step() {
         let value = serde_json::json!({ "z": 1, "a": 2 });
         assert_eq!(encode_canonical(&value, false).unwrap(), r#"{"a":2,"z":1}"#);
     }
 
+    /// Trace: FR-006-AC-4
     #[test]
     fn a_value_that_cannot_be_json_names_what_was_being_encoded() {
         // A map whose key is not a string cannot be JSON at all — the failure

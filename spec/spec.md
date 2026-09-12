@@ -1,0 +1,233 @@
+---
+type: master-requirements
+name: ix-cli-kit
+org: agent-ix
+component_type: rust-lib
+tags:
+  - cli
+  - foundation
+implementation_language: rust
+depends_on: []
+relationships: []
+standards_alignment:
+  - iso-iec-ieee-29148
+  - ieee-828
+---
+# Master Requirements Specification
+## ix-cli-kit
+
+---
+
+## 1. Purpose
+
+This document defines the scope, intent, and governing requirements framework for
+`ix-cli-kit`, the shared Rust command-line foundation for the Agent-IX ecosystem.
+
+The crate owns four things and nothing else: the process **exit taxonomy**, the
+**stream discipline** that decides which stream a line goes to, **canonical JSON**
+encoding, **build-time version provenance**, and the **precedence order** by which a
+setting's value is chosen.
+
+This specification is a **port of shipped behaviour, not a design**. Every
+requirement here describes what the code in `src/` already does, traced to the
+implementation it was moved from. Where the shipped crate is found to do something
+its source did not, that is recorded as a defect and reported, not specified as a
+feature.
+
+---
+
+## 2. Scope
+
+### 2.1 In Scope
+
+- The five exit statuses `0`–`4` and the reservation of status `5`.
+- The result/diagnostic stream split, diagnostic rendering, and colour resolution.
+- Recursive-key-sorted canonical JSON and a single encoder.
+- Build-time source provenance and the version-agreement assertion.
+- The configuration **precedence order** — `flag > env > file > default` — and the
+  **union** semantics of an ordered search path.
+- The crate-level boundary rules: no argv parsing, no `clap` dependency, and no path
+  chosen on a consumer's behalf.
+
+### 2.2 Out of Scope
+
+This specification does **not** govern:
+
+- **Argv parsing.** v0.1 exports no `Parser`-derived root command type and the crate
+  has no `clap` dependency at all. Argument parsing belongs to the consuming binary.
+- **Configuration locations and schemas.** The crate decides the ORDER; every
+  consumer owns its own locations and its own schema. Each application and module
+  knows its own shape, and the crate must never encode any application's shape.
+- **The `command_not_found` behaviour** at exit status 5. The status is reserved and
+  deliberately unimplemented here; the behaviour is specified for `quoin-cli` in
+  `ix://agent-ix/quoin/FR-102`.
+- **Terminal control.** Nothing opens an alternate screen, sets raw mode, asks for
+  terminal size, or runs an event loop. That is TUI machinery owned by the consumer.
+- **The module-store on-disk layout.** `~/.ix/filament/modules` and
+  `~/.ix/filament/registry.json` are owned by `quoin` (producer) and read by
+  `quire-rs`. This crate names no path.
+- **Publication.** The crate is `publish = false`; consumers pin it by git revision.
+
+---
+
+## 3. System Overview
+
+### 3.1 System Description
+
+`ix-cli-kit` is a `no-argv` Rust library crate. Its five modules were each moved from
+an existing implementation in this ecosystem rather than invented:
+
+| module | moved from |
+|---|---|
+| `exit` | `quoin-core`'s `protocol::Outcome` |
+| `streams` | `quire-cli/src/io.rs` |
+| `json` | `quire-corpus`'s `print_json`/`sort_json`, `quoin-core`'s `canonical_json`, `quire-cli`'s `encode_json` |
+| `version` | `quire-cli/build.rs` and `quoin/scripts/check-version-agreement.mjs` |
+| `config` | `quire-cli/src/commands/validate.rs`'s `scoped_registry_roots` |
+
+The 2026-09-12 survey that scoped the crate found five Rust CLIs — `build-chain`,
+`quire-cli`, `engineering-assurance`, `quire-corpus`, `quoin-core` — each with its own
+exit taxonomy, and all five disagreeing.
+
+### 3.2 Intended Users
+
+- Authors of Agent-IX Rust command-line binaries.
+- Authors of Agent-IX terminal user interfaces, `ix-cli` foremost.
+- Operators and scripts that consume those binaries' exit statuses and streams.
+
+---
+
+## 4. Requirements Architecture
+
+```
+spec/
+├── spec.md            # This document
+├── stakeholder/       # StR-XXX
+├── usecase/           # US-XXX
+├── functional/        # FR-XXX
+└── non-functional/    # NFR-XXX
+```
+
+---
+
+## 5. Requirement Classes
+
+### 5.1 Stakeholder Requirements
+
+Authoritative needs. Format `StR-XXX`, location `stakeholder/`, normative for intent.
+
+### 5.2 User Requirements
+
+Usage intent. Format `US-XXX`, location `usecase/`, informational and non-binding.
+
+### 5.3 Functional Requirements
+
+Observable, testable behaviour. Format `FR-XXX`, location `functional/`, normative.
+
+### 5.4 Non-Functional Requirements
+
+Quality constraints. Format `NFR-XXX`, location `non-functional/`, normative.
+
+### 5.5 Acceptance Criteria
+
+Format `{FR-XXX}-AC-N`, inside each functional requirement file, and the verification
+anchor that the repository's tests bind to with `Trace:` tags.
+
+### 5.6 Requirements Index
+
+The artifacts are normative; this table is an index.
+
+| ID | Module | Title |
+|----|--------|-------|
+| [FR-001](./functional/FR-001-exit-taxonomy.md) | `exit` | Report process outcome as one of five defined exit statuses |
+| [FR-002](./functional/FR-002-reserved-exit-status.md) | `exit` | Reserve exit status 5 for `command_not_found` without implementing it |
+| [FR-003](./functional/FR-003-stream-discipline.md) | `streams` | Send results to stdout and diagnostics to stderr, never colourising a result |
+| [FR-004](./functional/FR-004-diagnostic-rendering.md) | `streams` | Render a diagnostic in a human or JSON shape, separately from emitting it |
+| [FR-005](./functional/FR-005-colour-resolution.md) | `streams` | Decide colour from an explicit choice, terminal state and `NO_COLOR` |
+| [FR-006](./functional/FR-006-canonical-json.md) | `json` | Encode JSON with keys sorted at every depth and no insignificant whitespace |
+| [FR-007](./functional/FR-007-source-provenance.md) | `version` | Bake the source revision and working-tree state into the build |
+| [FR-008](./functional/FR-008-version-agreement.md) | `version` | Assert that every version surface of a built binary agrees |
+| [FR-009](./functional/FR-009-scalar-precedence.md) | `config` | Resolve a scalar setting as flag, then environment, then file, then default |
+| [FR-010](./functional/FR-010-search-path-union.md) | `config` | Union search roots in first-seen order, checking existence only for environment-supplied roots |
+| [FR-011](./functional/FR-011-configuration-file-loading.md) | `config` | Load a configuration file as absent, present, or malformed at a named position |
+| [FR-012](./functional/FR-012-xdg-available-never-imposed.md) | `config` | Offer XDG base directories without imposing them |
+| [FR-013](./functional/FR-013-crate-boundary.md) | crate | Ship no argv parser and no command-line framework dependency |
+| [NFR-001](./non-functional/NFR-001-canonical-encoding-is-feature-independent.md) | `json` | Canonical encoding holds under dependency feature unification |
+| [NFR-002](./non-functional/NFR-002-provenance-and-licence-headers.md) | crate | Every source file declares its licence and the crate stays unpublished |
+| [NFR-003](./non-functional/NFR-003-dependency-floor.md) | crate | The dependency surface stays minimal and is declared as caret ranges |
+
+---
+
+## 6. Requirement Identification
+
+| Artifact | Format | Example |
+|---|---|---|
+| Stakeholder Requirement | `StR-XXX` | `StR-001` |
+| User Story | `US-XXX` | `US-003` |
+| Functional Requirement | `FR-XXX` | `FR-010` |
+| Non-Functional Requirement | `NFR-XXX` | `NFR-002` |
+| Acceptance Criteria | `{FR}-AC-N` | `FR-010-AC-4` |
+| Test Case | `TC-XXX` | `TC-001` |
+
+Identifiers are immutable once assigned. Test-case identifiers correspond to the
+`tc_NNN`-prefixed test function names already present under `tests/`.
+
+---
+
+## 7. Requirement Quality Policy
+
+Functional requirements SHALL define observable behaviour, be atomic, and be testable
+through explicit criteria. They SHALL NOT encode a consuming application's policy, and
+SHALL NOT introduce behaviour the shipped crate does not already have — this
+specification is a 1:1 port.
+
+---
+
+## 8. Error and Failure Model
+
+### 8.1 Error Classification
+
+- **Refused** (exit 2) — understood and refused by a stated rule.
+- **Invalid** (exit 3) — not a well-formed request for a known operation.
+- **Internal** (exit 4) — the tool itself failed.
+- **Partial** (exit 1) — a complete payload accompanied by diagnostics.
+
+### 8.2 Failure Handling Guarantees
+
+A non-zero status does not imply an absent payload. Callers SHALL ask
+`Outcome::carries_payload()` rather than comparing the status to zero.
+
+An unresolvable provenance value is reported as `unknown`, never as a plausible
+substitute.
+
+---
+
+## 9. Traceability
+
+Bidirectional traceability is maintained between StR → US → FR → AC → test, with
+tests binding to acceptance criteria via `Trace:` tags in the test source.
+
+---
+
+## 10. Verification Strategy
+
+Requirements are verified by automated tests in this repository, by inspection of the
+source where the requirement is a boundary rule (a dependency that must be absent
+cannot be demonstrated by running it), and by analysis where the requirement concerns
+behaviour of a dependency's feature unification.
+
+---
+
+## 11. Change Management
+
+Requirements artifacts are configuration-controlled. A behaviour change to a ported
+module is a change to both this specification and the implementation it was ported
+from; the two must not diverge silently.
+
+---
+
+## 12. References
+
+- ISO/IEC/IEEE 29148 — Requirements Engineering
+- IEEE 828 — Configuration Management
+- `ix://agent-ix/quoin/FR-102` — `command_not_found`, which reserves exit status 5
