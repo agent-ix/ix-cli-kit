@@ -22,6 +22,7 @@ use ix_cli_kit::version::{Agreement, Disagreement};
 
 const FIXTURE: &str = env!("CARGO_BIN_EXE_version_fixture");
 
+/// Trace: FR-008-AC-7
 /// `tc_001`: every surface of the built binary reports the same version, and a
 /// clean tag reports itself.
 #[test]
@@ -37,6 +38,7 @@ fn tc_001_surfaces_of_the_built_binary_agree() {
     assert_eq!(report.surfaces.len(), 3);
 }
 
+/// Trace: FR-008-AC-6
 /// `tc_002`: a surface that cannot be run reports nothing, and reporting nothing
 /// is unverifiable rather than a pass. A gate that succeeds when it observed
 /// nothing is the decorative gate this helper replaces.

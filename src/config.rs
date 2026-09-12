@@ -17,14 +17,15 @@
 //!
 //! The survey that scoped this crate asked "does it have a config FILE" and got
 //! 0 of 5. That was the wrong question. "Does it RESOLVE configuration" has a
-//! different answer: `quire-cli/src/commands/validate.rs:485-520` already
-//! implements the full chain by hand —
+//! different answer: `quire-cli/src/commands/validate.rs:485-516` already
+//! implements the full chain by hand, in FIVE layers —
 //!
-//! 1. the `--scope` flag, always the FIRST search root;
-//! 2. `IX_FILAMENT_MODULES_PATH`;
-//! 3. `IX_SCHEMA_PATH`, a legacy alias;
-//! 4. `quire_rs::loader::paths::default_module_root()`, the canonical install
-//!    root.
+//! 1. the `--scope` flag, always the FIRST search root (`:488`);
+//! 2. `<scope>/.ix/modules`, when it is an existing directory (`:489-492`);
+//! 3. `IX_FILAMENT_MODULES_PATH` (`:494-501`);
+//! 4. `IX_SCHEMA_PATH`, a legacy alias (`:494-501`);
+//! 5. `quire_rs::loader::paths::default_module_root()`, the canonical install
+//!    root, pushed UNCONDITIONALLY (`:503-505`).
 //!
 //! Two decisions are encoded there that nobody had written down as a contract,
 //! and settling them is why this module exists:
@@ -208,11 +209,19 @@ impl EnvVar {
 /// drop the second environment variable's paths entirely, which is a behaviour
 /// change, not a cleanup.
 ///
-/// Existence is checked (`is_dir`) for env- and default-supplied roots, matching
-/// the ported behaviour: a stale entry in a `PATH`-style variable should not
-/// become a search root. An explicitly supplied root is kept regardless, because
-/// an operator who names a directory that does not exist has made an error the
-/// consumer should be able to report rather than one this crate should hide.
+/// Existence is checked (`is_dir`) for ENV-supplied roots only, matching the
+/// ported behaviour: a stale entry in a `PATH`-style variable is probably a user
+/// mistake and should not become a search root.
+///
+/// The asymmetry is deliberate and load-bearing. The ported code pushes the
+/// default module root **unconditionally** (`validate.rs:503-505`), because that
+/// root is where the tool MATERIALISES modules into — it must be in the search
+/// set before it exists, or every fresh machine silently searches one directory
+/// fewer. A consumer reproducing that layer therefore calls [`SearchPath::push`],
+/// not [`SearchPath::push_if_dir`]. An explicitly supplied root (`--scope`) is
+/// likewise kept regardless, because an operator who names a directory that does
+/// not exist has made an error the consumer should report, not one this crate
+/// should hide.
 #[derive(Debug, Default, Clone)]
 pub struct SearchPath {
     roots: Vec<PathBuf>,
@@ -537,6 +546,7 @@ pub mod xdg {
 mod tests {
     use super::*;
 
+    /// Trace: FR-009-AC-1
     #[test]
     fn the_override_chain_is_flag_then_env_then_file_then_default() {
         assert_eq!(
@@ -573,6 +583,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-010-AC-1
     // The ported behaviour: the explicit root is FIRST, both env vars are
     // UNIONED, and a repeat is dropped rather than reordered. An override chain
     // would have kept only one of the two variables.
@@ -593,6 +604,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-010-AC-2
     #[test]
     fn an_explicit_root_is_kept_even_when_it_does_not_exist() {
         let path = SearchPath::new().push("/definitely/not/here");
@@ -605,6 +617,20 @@ mod tests {
         );
     }
 
+    /// Trace: FR-010-AC-3
+    // Regression guard for the fresh-install case. `quire-cli` pushes the default
+    // module root unconditionally (`validate.rs:503-505`) because that root is
+    // where modules are materialised into; `push_if_dir` here would silently drop
+    // it on every machine where it does not exist yet.
+    #[test]
+    fn the_default_root_is_searched_before_it_exists() {
+        let absent = PathBuf::from("/definitely/not/here/.ix/filament/modules");
+        assert!(!absent.is_dir());
+        let path = SearchPath::new().push("/scope").push(absent.clone());
+        assert_eq!(path.roots(), [PathBuf::from("/scope"), absent]);
+    }
+
+    /// Trace: FR-010-AC-5
     #[test]
     fn a_legacy_alias_names_what_supersedes_it() {
         let legacy = EnvVar::legacy("IX_SCHEMA_PATH", "IX_FILAMENT_MODULES_PATH");
@@ -613,6 +639,7 @@ mod tests {
         assert!(!EnvVar::current("IX_FILAMENT_MODULES_PATH").is_legacy());
     }
 
+    /// Trace: FR-010-AC-4
     #[test]
     fn an_unset_variable_contributes_nothing_and_deprecates_nothing() {
         let path =
@@ -621,6 +648,7 @@ mod tests {
         assert!(path.deprecations().is_empty());
     }
 
+    /// Trace: FR-011-AC-1
     #[test]
     fn an_absent_file_is_absent_not_an_error() {
         let loaded: Loaded<serde_json::Value> =
@@ -629,6 +657,7 @@ mod tests {
         assert!(!loaded.is_present());
     }
 
+    /// Trace: FR-011-AC-2
     // The distinction this type exists for: malformed must name file AND line.
     #[test]
     fn a_malformed_file_names_the_path_and_the_line() {
@@ -655,6 +684,7 @@ mod tests {
         format: String,
     }
 
+    /// Trace: FR-011-AC-3
     #[test]
     fn a_present_file_parses_into_the_requested_type() {
         let dir = std::env::temp_dir().join("ix-cli-kit-config-present");
@@ -672,6 +702,15 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 
+    /// Trace: FR-009-AC-3
+    #[test]
+    fn an_unset_variable_parses_to_nothing_rather_than_to_a_default() {
+        let parsed: Option<u32> =
+            resolve_parsed("IX_CLI_KIT_A_VARIABLE_NOBODY_SETS").expect("unset is not an error");
+        assert!(parsed.is_none());
+    }
+
+    /// Trace: FR-009-AC-2
     #[test]
     fn source_spellings_are_stable() {
         assert_eq!(
@@ -685,6 +724,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-012-AC-1
     // XDG is available, not imposed — and a relative override is ignored per
     // the specification rather than resolved against the working directory.
     #[test]
