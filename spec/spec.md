@@ -23,16 +23,15 @@ standards_alignment:
 This document defines the scope, intent, and governing requirements framework for
 `ix-cli-kit`, the shared Rust command-line foundation for the Agent-IX ecosystem.
 
-The crate owns four things and nothing else: the process **exit taxonomy**, the
-**stream discipline** that decides which stream a line goes to, **canonical JSON**
-encoding, **build-time version provenance**, and the **precedence order** by which a
-setting's value is chosen.
+The crate owns the process **exit taxonomy**, the **stream discipline** that decides
+which stream a line goes to, **canonical JSON** encoding, **build-time version
+provenance**, the **precedence order** by which a setting's value is chosen, and a
+shared **OS credential-store contract** for local secrets.
 
-This specification is a **port of shipped behaviour, not a design**. Every
-requirement here describes what the code in `src/` already does, traced to the
-implementation it was moved from. Where the shipped crate is found to do something
-its source did not, that is recorded as a defect and reported, not specified as a
-feature.
+Requirements FR-001 through FR-013 describe shipped behaviour ported into this
+crate. Requirements FR-014 through FR-016 and NFR-004 specify the prospective
+SWM-12 credential extension. They are requirements for later implementation,
+not claims that the current crate already ships the credential API.
 
 ---
 
@@ -48,6 +47,8 @@ feature.
   **union** semantics of an ordered search path.
 - The crate-level boundary rules: no argv parsing, no `clap` dependency, and no path
   chosen on a consumer's behalf.
+- App-scoped OS credential-store operations, secret-source precedence and reporting,
+  non-disclosure, and pinned-revision adoption by `ix-projects` and one Rust CLI.
 
 ### 2.2 Out of Scope
 
@@ -58,6 +59,11 @@ This specification does **not** govern:
 - **Configuration locations and schemas.** The crate decides the ORDER; every
   consumer owns its own locations and its own schema. Each application and module
   knows its own shape, and the crate must never encode any application's shape.
+- **Application login screens and command syntax.** Consumers choose their own
+  interaction and argument parsing. The shared API supplies store operations and
+  source metadata, not an application command.
+- **File fallback for credentials.** A locked or unavailable OS credential store is
+  an explicit error, with no plaintext or encrypted local-file substitute.
 - **The `command_not_found` behaviour** at exit status 5. The status is reserved and
   deliberately unimplemented here; the behaviour is specified for `quoin-cli` in
   `ix://agent-ix/quoin/FR-102`.
@@ -85,6 +91,14 @@ an existing implementation in this ecosystem rather than invented:
 | `version` | `quire-cli/build.rs` and `quoin/scripts/check-version-agreement.mjs` |
 | `config` | `quire-cli/src/commands/validate.rs`'s `scoped_registry_roots` |
 
+SWM-12 adds a prospective `secrets` module beside `config`, in this same crate.
+This boundary follows the existing division: `config` already owns order and
+source reporting, while consumers own settings paths and schemas. A separate
+crate would require a second dependency and a second source-reporting contract
+for this small local-settings extension. The new module owns secret-specific
+source selection and uses the OS store; it does not turn ordinary settings files
+into a credential backend. Consumers pin this one crate by git revision.
+
 The 2026-09-12 survey that scoped the crate found five Rust CLIs — `build-chain`,
 `quire-cli`, `engineering-assurance`, `quire-corpus`, `quoin-core` — each with its own
 exit taxonomy, and all five disagreeing.
@@ -93,6 +107,7 @@ exit taxonomy, and all five disagreeing.
 
 - Authors of Agent-IX Rust command-line binaries.
 - Authors of Agent-IX terminal user interfaces, `ix-cli` foremost.
+- Authors of Rust applications with local credentials, including `ix-projects`.
 - Operators and scripts that consume those binaries' exit statuses and streams.
 
 ---
@@ -152,9 +167,13 @@ The artifacts are normative; this table is an index.
 | [FR-011](./functional/FR-011-configuration-file-loading.md) | `config` | Load a configuration file as absent, present, or malformed at a named position |
 | [FR-012](./functional/FR-012-xdg-available-never-imposed.md) | `config` | Offer XDG base directories without imposing them |
 | [FR-013](./functional/FR-013-crate-boundary.md) | crate | Ship no argv parser and no command-line framework dependency |
+| [FR-014](./functional/FR-014-os-credential-store.md) | `secrets` | Store app-scoped credentials in the OS credential store |
+| [FR-015](./functional/FR-015-secret-source-precedence.md) | `secrets` | Resolve secret overrides and report their source without revealing values |
+| [FR-016](./functional/FR-016-shared-adoption.md) | crate | Adopt the shared credential contract from an app and a Rust CLI |
 | [NFR-001](./non-functional/NFR-001-canonical-encoding-is-feature-independent.md) | `json` | Canonical encoding holds under dependency feature unification |
 | [NFR-002](./non-functional/NFR-002-provenance-and-licence-headers.md) | crate | Every source file declares its licence and the crate stays unpublished |
 | [NFR-003](./non-functional/NFR-003-dependency-floor.md) | crate | The dependency surface stays minimal and is declared as caret ranges |
+| [NFR-004](./non-functional/NFR-004-secret-nondisclosure.md) | `secrets` | Secret values stay out of formatting and settings serialization |
 
 ---
 
@@ -177,9 +196,9 @@ Identifiers are immutable once assigned. Test-case identifiers correspond to the
 ## 7. Requirement Quality Policy
 
 Functional requirements SHALL define observable behaviour, be atomic, and be testable
-through explicit criteria. They SHALL NOT encode a consuming application's policy, and
-SHALL NOT introduce behaviour the shipped crate does not already have — this
-specification is a 1:1 port.
+through explicit criteria. They SHALL NOT encode a consuming application's policy.
+FR-001 through FR-013 remain a 1:1 port. The SWM-12 requirements describe a
+new, unimplemented extension and must not be read as shipped behaviour.
 
 ---
 
@@ -214,7 +233,10 @@ tests binding to acceptance criteria via `Trace:` tags in the test source.
 Requirements are verified by automated tests in this repository, by inspection of the
 source where the requirement is a boundary rule (a dependency that must be absent
 cannot be demonstrated by running it), and by analysis where the requirement concerns
-behaviour of a dependency's feature unification.
+behaviour of a dependency's feature unification. FR-016 additionally requires
+focused integration evidence in `ix-projects` and one Rust CLI. Those adoption
+changes follow implementation of the shared contract; this spec change makes no
+consumer code changes.
 
 ---
 
@@ -222,7 +244,8 @@ behaviour of a dependency's feature unification.
 
 Requirements artifacts are configuration-controlled. A behaviour change to a ported
 module is a change to both this specification and the implementation it was ported
-from; the two must not diverge silently.
+from; the two must not diverge silently. SWM-12 implementation must satisfy its
+prospective requirements before either consumer adopts the shared API.
 
 ---
 
