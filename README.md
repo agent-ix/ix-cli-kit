@@ -51,6 +51,11 @@ Two shapes, because there are two kinds of setting:
 
 Search roots union because that is the ported behaviour, and collapsing them into the override chain would drop one environment variable's roots entirely. Absent and malformed configuration are kept distinct, and a malformed file is reported with its path, line and column.
 
+SWM-12 now specifies a prospective, off-by-default `secrets` module for local
+Rust application and CLI credentials. It is not part of the shipped v0.1 API.
+The specification keeps settings file paths with consumers and requires OS
+credential storage without a file fallback.
+
 ## Roadmap: what is excluded, and exactly what promotes it
 
 v0.1 **extracts** code that existing CLIs already wrote independently, where correctness is provable by diffing against what exists. Everything below would be **designed** from scratch against zero or one consumer, and a shared crate designed against a single consumer is that consumer's code in a more expensive location. A capability qualifies for early promotion when it is a **MOVE rather than a DESIGN** — existing code whose correctness is provable by diffing against the original — even at a low consumer count. It also qualifies when every surveyed consumer *lacks* it **and that absence is a known gap rather than a known non-need**. Consumer count is the weakest of the three signals: it is a hint, not the test.
@@ -62,8 +67,8 @@ The census that produced these counts asked "does it have a config FILE" and got
 | `self_update` | 1 (`quire-cli`) | channel detection, release-channel policy | **COMMITTED — the next work item after v0.1 lands.** Owner ruling: "self-update will have many [consumers]." It will be **feature-gated, default OFF** — but as a CAPABILITY gate, not a dependency gate. Measured: `quire-cli/src/self_update/` is `std`-only and adds **zero** dependencies (it never downloads, extracts, verifies a digest, replaces the running executable, or rolls back; it detects the install channel and shells out to `npm`/`cargo`). What the gate keeps out of a default build is code that can spawn external programs with inherited stdio. Detail: agent-ix/ix-cli-kit#2. |
 | `config` | — | — | **PROMOTED INTO v0.1.** 1 of 5 already implements the precedence chain by hand, unioned, with an undocumented legacy alias (`IX_SCHEMA_PATH`). Promoted because it exists and is unowned. |
 | plugin / command dispatch | 0 | a command-resolution model, a `command_not_found` disposition, a plugin manifest contract | quoin `spec/functional/FR-102-command-surface-and-oclif-retirement.md` (AC-3 `command_not_found`, AC-4 plugin command resolution) reaches a decided disposition **and** a second Rust CLI needs it. Exit code `5` is reserved for `command_not_found` and deliberately not implemented: `exit::from_code(5)` returns `None`. |
-| secrets | 0 | a storage backend, a redaction contract, a rotation story | Not "count 0". Their shape is defined by what `ix-cli` needs, `ix-cli` is a TUI, and **nobody has specified what a TUI's credential flow looks like here.** Designing them now means designing them wrong. Trigger: a written credential-flow specification for the TUI. |
-| device-auth | 0 | a polling flow, token storage, refresh, revocation | Same reason as secrets, same trigger. |
+| secrets | `ix-projects` and one Rust CLI are planned adopters | OS backend, redaction, source reporting | **SPECIFIED by SWM-12; implementation pending.** The app and CLI flow is defined in FR-014 through FR-016 and NFR-004. The capability is off by default and has target-gated OS dependencies. This does not specify a TUI login flow. |
+| device-auth | 0 | a polling flow, token storage, refresh, revocation | A separate written device-auth flow covering polling, refresh, and revocation is required; SWM-12 covers local credential storage only. |
 | marketplace | 0 | a registry protocol and a trust model | A registry protocol exists in specification and a Rust consumer needs to read it. |
 | stable error-code envelope | 0 | a numbering authority, a stability promise per code | Two consumers need machine-stable error identity beyond the five-member exit taxonomy. Until then `streams::DiagnosticFields` carries `reason` as free text. |
 
