@@ -91,7 +91,7 @@ an existing implementation in this ecosystem rather than invented:
 | `version` | `quire-cli/build.rs` and `quoin/scripts/check-version-agreement.mjs` |
 | `config` | `quire-cli/src/commands/validate.rs`'s `scoped_registry_roots` |
 
-SWM-12 adds a prospective `secrets` module beside `config`, in this same crate.
+SWM-12 adds a prospective, off-by-default `secrets` module beside `config`, in this same crate.
 This boundary follows the existing division: `config` already owns order and
 source reporting, while consumers own settings paths and schemas. A separate
 crate would require a second dependency and a second source-reporting contract
