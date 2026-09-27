@@ -29,9 +29,10 @@ provenance**, the **precedence order** by which a setting's value is chosen, and
 shared **OS credential-store contract** for local secrets.
 
 Requirements FR-001 through FR-013 describe shipped behaviour ported into this
-crate. Requirements FR-014 through FR-016 and NFR-004 specify the prospective
-SWM-12 credential extension. They are requirements for later implementation,
-not claims that the current crate already ships the credential API.
+crate. Requirements FR-014 through FR-016 and NFR-004 specify the SWM-12
+credential extension. FR-014, FR-015 and NFR-004 are implemented behind the
+off-by-default `secrets` feature; FR-016 describes separate downstream consumer
+adoption work.
 
 ---
 
@@ -91,7 +92,7 @@ an existing implementation in this ecosystem rather than invented:
 | `version` | `quire-cli/build.rs` and `quoin/scripts/check-version-agreement.mjs` |
 | `config` | `quire-cli/src/commands/validate.rs`'s `scoped_registry_roots` |
 
-SWM-12 adds a prospective, off-by-default `secrets` module beside `config`, in this same crate.
+SWM-12 adds an off-by-default `secrets` module beside `config`, in this same crate.
 This boundary follows the existing division: `config` already owns order and
 source reporting, while consumers own settings paths and schemas. A separate
 crate would require a second dependency and a second source-reporting contract
@@ -244,8 +245,9 @@ consumer code changes.
 
 Requirements artifacts are configuration-controlled. A behaviour change to a ported
 module is a change to both this specification and the implementation it was ported
-from; the two must not diverge silently. SWM-12 implementation must satisfy its
-prospective requirements before either consumer adopts the shared API.
+from; the two must not diverge silently. The shared API implementation must
+satisfy FR-014, FR-015 and NFR-004 before either consumer adopts it; FR-016 is
+verified by the separate consumer changes.
 
 ---
 

@@ -32,10 +32,12 @@ fmt-check:
 .PHONY: lint
 lint:
 	$(CARGO) clippy --all-targets -- -D warnings
+	$(CARGO) clippy --all-targets --features secrets -- -D warnings
 
 .PHONY: test
 test:
 	$(CARGO) test
+	$(CARGO) test --features secrets --test tc_030_secrets
 
 .PHONY: build
 build:
