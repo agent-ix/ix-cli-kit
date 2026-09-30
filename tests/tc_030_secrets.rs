@@ -226,6 +226,52 @@ fn tc_031_identifiers_are_validated_before_backend_access() {
         SecretKey::try_from(oversized.as_str()),
         Err(SecretError::InvalidKey)
     );
+    for invalid_scope in ["/a", "a/", "a//b", "a/B", "a/b:c"] {
+        assert_eq!(
+            AppScope::try_from(invalid_scope),
+            Err(SecretError::InvalidScope),
+            "scope {invalid_scope:?}"
+        );
+    }
+    assert!(AppScope::try_from("agent-ix/ix-projects").is_ok());
+    assert_eq!(
+        SecretKey::try_from("ix-projects/api-key"),
+        Err(SecretError::InvalidKey)
+    );
+}
+
+/// Trace: FR-014-AC-1, FR-014-AC-2
+/// `tc_035`: slash-separated service scopes preserve their exact identity.
+#[test]
+fn tc_035_service_scopes_remain_distinct_in_memory() {
+    let store = SecretStore::new(MemoryBackend::default());
+    let projects_scope = scope("agent-ix/ix-projects");
+    let board_scope = scope("agent-ix/ix-board");
+    let key = key("linear-api-key");
+
+    store
+        .set(&projects_scope, &key, &secret("projects-secret"))
+        .expect("set projects secret");
+    store
+        .set(&board_scope, &key, &secret("board-secret"))
+        .expect("set board secret");
+
+    assert_eq!(
+        store
+            .get(&projects_scope, &key)
+            .expect("get projects secret")
+            .expect("projects secret exists")
+            .expose_secret(),
+        "projects-secret"
+    );
+    assert_eq!(
+        store
+            .get(&board_scope, &key)
+            .expect("get board secret")
+            .expect("board secret exists")
+            .expose_secret(),
+        "board-secret"
+    );
 }
 
 /// Trace: FR-014-AC-3, FR-015-AC-3, NFR-004

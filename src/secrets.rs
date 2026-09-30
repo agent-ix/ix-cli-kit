@@ -31,7 +31,7 @@ impl TryFrom<&str> for AppScope {
     type Error = SecretError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        validate_identifier(value).map_err(|()| SecretError::InvalidScope)?;
+        validate_scope(value).map_err(|()| SecretError::InvalidScope)?;
         Ok(Self(value.into()))
     }
 }
@@ -77,18 +77,31 @@ impl fmt::Debug for SecretKey {
 
 fn validate_identifier(value: &str) -> Result<(), ()> {
     let bytes = value.as_bytes();
-    let Some(first) = bytes.first() else {
+    if bytes.len() > MAX_IDENTIFIER_BYTES || !is_identifier_component(bytes) {
         return Err(());
-    };
-    if bytes.len() > MAX_IDENTIFIER_BYTES
-        || (!first.is_ascii_lowercase() && !first.is_ascii_digit())
-        || !bytes
-            .iter()
-            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"._-".contains(byte))
+    }
+    Ok(())
+}
+
+fn validate_scope(value: &str) -> Result<(), ()> {
+    if value.len() > MAX_IDENTIFIER_BYTES
+        || !value
+            .split('/')
+            .all(|component| is_identifier_component(component.as_bytes()))
     {
         return Err(());
     }
     Ok(())
+}
+
+fn is_identifier_component(bytes: &[u8]) -> bool {
+    let Some(first) = bytes.first() else {
+        return false;
+    };
+    (first.is_ascii_lowercase() || first.is_ascii_digit())
+        && bytes
+            .iter()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"._-".contains(byte))
 }
 
 /// A secret value that masks itself in debug output and has no serialization or
