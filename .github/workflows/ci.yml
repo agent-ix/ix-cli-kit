@@ -4,6 +4,37 @@ name: CI
 on:
   workflow_dispatch:
 jobs:
+  secrets-os:
+    name: OS secrets (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Provision Secret Service
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y dbus-x11 gnome-keyring
+
+      - name: Test secret API contract
+        run: cargo test --features secrets --test tc_030_secrets
+
+      - name: Test native credential store
+        if: runner.os != 'Linux'
+        run: cargo test --features secrets --test tc_040_os_store -- --ignored
+
+      - name: Test native credential store in Secret Service session
+        if: runner.os == 'Linux'
+        run: >-
+          dbus-run-session -- bash -lc
+          'printf "ix-cli-kit-ci\n" | gnome-keyring-daemon --unlock --components=secrets;
+          cargo test --features secrets --test tc_040_os_store -- --ignored'
+
   rust:
     name: Rust Checks
     runs-on: ubuntu-24.04
@@ -24,8 +55,14 @@ jobs:
       - name: Lint
         run: cargo clippy --all-targets -- -D warnings
 
+      - name: Lint secrets feature
+        run: cargo clippy --all-targets --features secrets -- -D warnings
+
       - name: Test
         run: cargo test
+
+      - name: Test secrets API contract
+        run: cargo test --features secrets --test tc_030_secrets
 
       - name: Unsafe audit
         run: bash scripts/check_unsafe_comments.sh

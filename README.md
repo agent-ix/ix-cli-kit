@@ -2,7 +2,7 @@
 
 ## Name and scope
 
-- **It is a shared library of CLI plumbing**: exit-code taxonomy, version provenance, stream discipline, canonical JSON, config precedence.
+- **It is a shared library of CLI plumbing**: exit-code taxonomy, version provenance, stream discipline, canonical JSON, config precedence, and opt-in OS credential storage.
 - **It is NOT a CLI, NOT a framework, and NOT a port of `ix-cli`.** It exports no root command type, no argv parsing, no TUI, and no command dispatch.
 - **`ix-cli` remains TypeScript** and is out of scope for this crate and for the Rust burn-down program.
 
@@ -17,6 +17,7 @@ The name is deliberate and should not drift back. An earlier working name, `ix-c
 | `json` | canonical (recursively key-sorted) JSON, and one encoder |
 | `version` | build-time source provenance, and the agreement assertion |
 | `config` | the precedence ORDER — flag > env > file > default, and unioned search paths |
+| `secrets` | opt-in app-scoped OS credential storage and secret-source precedence |
 
 ### `exit` — one taxonomy, adopted verbatim
 
@@ -51,10 +52,11 @@ Two shapes, because there are two kinds of setting:
 
 Search roots union because that is the ported behaviour, and collapsing them into the override chain would drop one environment variable's roots entirely. Absent and malformed configuration are kept distinct, and a malformed file is reported with its path, line and column.
 
-SWM-12 now specifies a prospective, off-by-default `secrets` module for local
-Rust application and CLI credentials. It is not part of the shipped v0.1 API.
-The specification keeps settings file paths with consumers and requires OS
-credential storage without a file fallback.
+The `secrets` module is opt-in through the `secrets` Cargo feature. It stores
+credentials in Keychain, Secret Service, or Credential Manager and resolves
+explicit input > a named environment variable > the OS store. Secret values
+have redacted debug output and are not serializable. Settings schemas and file
+paths remain consumer-owned, and the module has no file fallback.
 
 ## Roadmap: what is excluded, and exactly what promotes it
 
@@ -67,7 +69,7 @@ The census that produced these counts asked "does it have a config FILE" and got
 | `self_update` | 1 (`quire-cli`) | channel detection, release-channel policy | **COMMITTED — the next work item after v0.1 lands.** Owner ruling: "self-update will have many [consumers]." It will be **feature-gated, default OFF** — but as a CAPABILITY gate, not a dependency gate. Measured: `quire-cli/src/self_update/` is `std`-only and adds **zero** dependencies (it never downloads, extracts, verifies a digest, replaces the running executable, or rolls back; it detects the install channel and shells out to `npm`/`cargo`). What the gate keeps out of a default build is code that can spawn external programs with inherited stdio. Detail: agent-ix/ix-cli-kit#2. |
 | `config` | — | — | **PROMOTED INTO v0.1.** 1 of 5 already implements the precedence chain by hand, unioned, with an undocumented legacy alias (`IX_SCHEMA_PATH`). Promoted because it exists and is unowned. |
 | plugin / command dispatch | 0 | a command-resolution model, a `command_not_found` disposition, a plugin manifest contract | quoin `spec/functional/FR-102-command-surface-and-oclif-retirement.md` (AC-3 `command_not_found`, AC-4 plugin command resolution) reaches a decided disposition **and** a second Rust CLI needs it. Exit code `5` is reserved for `command_not_found` and deliberately not implemented: `exit::from_code(5)` returns `None`. |
-| secrets | `ix-projects` and one Rust CLI are planned adopters | OS backend, redaction, source reporting | **SPECIFIED by SWM-12; implementation pending.** The app and CLI flow is defined in FR-014 through FR-016 and NFR-004. The capability is off by default and has target-gated OS dependencies. This does not specify a TUI login flow. |
+| secrets | `ix-projects` and one Rust CLI are planned adopters | OS backend, redaction, source reporting | **IMPLEMENTED by SWM-12.** The app and CLI flow is defined in FR-014 through FR-016 and NFR-004. The capability is off by default and has target-gated OS dependencies. Consumer adoption remains a separate pinned-revision change. This does not specify a TUI login flow. |
 | device-auth | 0 | a polling flow, token storage, refresh, revocation | A separate written device-auth flow covering polling, refresh, and revocation is required; SWM-12 covers local credential storage only. |
 | marketplace | 0 | a registry protocol and a trust model | A registry protocol exists in specification and a Rust consumer needs to read it. |
 | stable error-code envelope | 0 | a numbering authority, a stability promise per code | Two consumers need machine-stable error identity beyond the five-member exit taxonomy. Until then `streams::DiagnosticFields` carries `reason` as free text. |
@@ -82,6 +84,16 @@ ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", rev = "<40-hex sh
 ```
 
 A tag pin drifts from a rev pin the moment one repository uses each: the ecosystem already has `quire-rs/Cargo.toml:69` pinning `ix-trace-rs` by `tag = "v0.1.1"` while five other repositories pin `rev = 2ce4ebf…`, which is one dependency presenting as two.
+
+Consumers that need the optional credential API enable it on the same pin:
+
+```toml
+ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", rev = "<40-hex sha>", features = ["secrets"] }
+```
+
+The application supplies its own scope and key and decides when to reveal a
+value to an authenticated operation. The crate does not add a settings file or
+choose a path.
 
 ### Dependency versions
 

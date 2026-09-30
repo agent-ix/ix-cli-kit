@@ -16,8 +16,11 @@ secret values through the operating system's credential store.
 ## Inputs
 
 - A consumer-supplied application scope and secret key, represented as distinct
-  validated types. Each identifier is nonempty lowercase ASCII matching
-  `[a-z0-9][a-z0-9._-]*`; other input is rejected before backend access.
+  validated types. An application scope is at most 255 bytes and contains one
+  or more slash-separated, nonempty lowercase ASCII components, each matching
+  `[a-z0-9][a-z0-9._-]*`. A secret key is at most 255 bytes and matches that
+  component grammar without slash separators. Other input is rejected before
+  backend access.
 - A secret value for set.
 
 ## Outputs
@@ -54,9 +57,9 @@ secret values through the operating system's credential store.
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-014-AC-1 | Set, get, status, and delete round-trip a value in one app scope; get after delete is absent and a second delete reports already absent. | Test |
-| FR-014-AC-2 | Distinct accepted pairs, including `(a-b, c)` versus `(a, b-c)` and `(a.b, c)` versus `(a, b.c)`, do not read, overwrite, or delete each other's values on any backend. | Test |
+| FR-014-AC-2 | Distinct accepted pairs, including `(a-b, c)` versus `(a, b-c)`, `(a.b, c)` versus `(a, b.c)`, and `(agent-ix/ix-projects, linear-api-key)` versus `(agent-ix/ix-board, linear-api-key)`, do not read, overwrite, or delete each other's values on any backend. | Test |
 | FR-014-AC-3 | A locked backend yields the locked variant and an unavailable backend yields the unavailable variant; neither operation creates a fallback file. | Test |
-| FR-014-AC-4 | Status reports presence without returning a value; empty, uppercase, Unicode, colon-bearing, or unrepresentable scope/key input is rejected before a backend call. | Test |
+| FR-014-AC-4 | Status reports presence without returning a value; empty, uppercase, Unicode, colon-bearing, empty-component scope (such as `a//b`), slash-bearing key, or unrepresentable scope/key input is rejected before a backend call. | Test |
 | FR-014-AC-5 | CI runs a get/set/status/delete integration test against Keychain on macOS, a provisioned Secret Service session on Linux, and Credential Manager on Windows. Each job fails if its expected adapter is unavailable or the round-trip fails. | Test |
 | FR-014-AC-6 | A target without a supported backend reports the unavailable variant; the default-feature dependency graph contains no OS credential backend. | Test |
 

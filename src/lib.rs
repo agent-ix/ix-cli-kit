@@ -12,6 +12,7 @@
 //! | [`json`] | canonical (recursively key-sorted) JSON, and one encoder |
 //! | [`version`] | build-time source provenance, and the agreement assertion |
 //! | [`config`] | the precedence ORDER — flag > env > file > default, and unioned search paths |
+//! | [`secrets`] | opt-in OS credential storage and secret-source precedence |
 //!
 //! [`config`] owns the order and never the locations: the ecosystem's default
 //! module root is `~/.ix/filament/modules`, and a shared crate that decided
@@ -54,5 +55,8 @@ pub mod exit;
 pub mod json;
 pub mod streams;
 pub mod version;
+
+#[cfg(feature = "secrets")]
+pub mod secrets;
 
 pub use exit::Outcome;
