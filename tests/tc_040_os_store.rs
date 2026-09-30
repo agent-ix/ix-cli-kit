@@ -14,7 +14,7 @@
 
 use ix_cli_kit::secrets::{AppScope, DeleteStatus, Presence, SecretKey, SecretStore, SecretValue};
 
-/// Trace: FR-014-AC-5
+/// Trace: FR-014-AC-2, FR-014-AC-5
 /// `tc_040`: the provisioned target adapter round-trips a credential through its OS store.
 #[test]
 #[ignore = "requires the native credential service provisioned by os-secrets-ci"]
@@ -89,6 +89,16 @@ fn tc_040_native_os_store_round_trips_and_deletes_a_credential() {
             SecretKey::try_from(format!("c.{namespace}").as_str())
                 .expect("Windows collision key is valid"),
             SecretValue::new("windows-collision-right"),
+        ),
+        (
+            AppScope::try_from("agent-ix/ix-projects").expect("projects scope is valid"),
+            SecretKey::try_from("linear-api-key").expect("key is valid"),
+            SecretValue::new("projects-scope"),
+        ),
+        (
+            AppScope::try_from("agent-ix/ix-board").expect("board scope is valid"),
+            SecretKey::try_from("linear-api-key").expect("key is valid"),
+            SecretValue::new("board-scope"),
         ),
     ];
     for (scope, key, value) in &identities {
