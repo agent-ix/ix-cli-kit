@@ -16,7 +16,7 @@ variable, and SHALL report each legacy environment variable that actually contri
 root.
 
 **This requirement is 1:1 with `quire-cli`'s `scoped_registry_roots`, at
-`/home/peter/dev/quire-cli/src/commands/validate.rs:485-516`, and with nothing else.**
+`quire-cli/src/commands/validate.rs:485-516`, and with nothing else.**
 Parity is claimed against that function alone. The other two implementations of the
 same on-disk contract were measured and do not agree with it; see *Measured divergence*
 below. Where they differ, this crate reproduces `quire-cli`.
@@ -80,8 +80,8 @@ default-supplied roots". Corrected; filed as `agent-ix/quire-cli#88` and
 ## Measured divergence across the ecosystem
 
 Measured by executing each implementation, not by reading string literals. Under
-`HOME=/home/peter` with no `IX_*` variables set, all three resolve the same absolute
-modules directory, `/home/peter/.ix/filament/modules`. They diverge as follows:
+`a fixed HOME` with no `IX_*` variables set, all three resolve the same absolute
+modules directory, `~/.ix/filament/modules`. They diverge as follows:
 
 | Condition | `quire-cli` (ported here) | `quire-rs` | `quoin` |
 |-----------|---------------------------|------------|---------|

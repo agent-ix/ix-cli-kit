@@ -24,5 +24,5 @@ Reviewed the SWM-12 shared secrets implementation and its tests, dependency grap
 ## Gate Results
 
 - `make ci`: passed formatting, default and `secrets` Clippy lanes, default tests, five secrets contract tests, license checks, and unsafe-code audit.
-- `quire validate --scope /home/peter/dev/ix-cli-kit/.worktrees/swm-12-code 'spec/**/*.md'`: exit 0. It reported module-discovery advisories unrelated to the reviewed spec changes.
+- `quire validate --scope . 'spec/**/*.md'`: exit 0. It reported module-discovery advisories unrelated to the reviewed spec changes.
 - `tc_040_os_store`: compiled locally and remains ignored outside the provisioned OS credential-store CI lane.
