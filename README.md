@@ -110,3 +110,8 @@ make ci     # fmt-check + lint + test + deny + audit-unsafe
 ## License
 
 AGPL-3.0-or-later
+
+Contributions follow the [canonical Agent IX CLA](CLA.md) and
+[content rights policy](CONTENT_RIGHTS.md). See [Contributing](CONTRIBUTING.md)
+for development and signing instructions. Community discussion is on
+[Agent IX Discord](https://discord.gg/k8DVhuYBR2).
