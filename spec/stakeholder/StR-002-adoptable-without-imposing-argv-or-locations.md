@@ -55,8 +55,9 @@ working across the adoption.
 
 ## Context and Assumptions
 
-It is assumed consumers pin this crate by git revision, and that this crate declares
-its own dependencies as caret ranges rather than exact pins, because two exact pins on
+It is assumed consumers declare this crate with `branch = "main"` and retain
+the resolved commit in their own `Cargo.lock`. This crate declares its own
+dependencies as caret ranges rather than exact pins, because two exact pins on
 one crate cannot coexist in a dependency graph.
 
 ## Stakeholder Constraints (Contextual)

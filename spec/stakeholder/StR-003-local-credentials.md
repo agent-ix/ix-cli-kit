@@ -29,7 +29,7 @@ duplicating storage policy.
 
 | ID | Criteria | Validation |
 |----|----------|------------|
-| StR-003-VC-1 | An application and a Rust CLI use the same pinned shared API for credential lookup and source reporting. | Demonstration |
+| StR-003-VC-1 | An application and a Rust CLI use the same shared API for credential lookup and source reporting. | Demonstration |
 | StR-003-VC-2 | A locked or unavailable OS store produces a distinct failure and no local plaintext credential file. | Demonstration |
 
 ## Stakeholders

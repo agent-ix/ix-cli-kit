@@ -11,7 +11,8 @@ relationships:
 ## Description
 
 `ix-projects` and one Rust CLI SHALL consume the shared credential implementation
-through pinned-revision dependency imports, without copying its source or backend
+through `branch = "main"` dependency declarations whose resolved commit is
+recorded in each consumer's `Cargo.lock`, without copying its source or backend
 artifacts into either consumer.
 
 ## Behavior
@@ -23,8 +24,8 @@ artifacts into either consumer.
   cache, and drift configuration paths remain consumer-owned.
 - One Rust CLI SHALL use the same API for a real credential flow and retain its
   own argument parser and settings path.
-- Both consumers SHALL pin the authoritative crate by git revision and enable
-  its `secrets` feature.
+- Both consumers SHALL declare the authoritative crate using `branch = "main"`,
+  retain the resolved commit in `Cargo.lock`, and enable its `secrets` feature.
 - Both consumers SHALL import its public API instead of maintaining another
   backend implementation.
 
@@ -32,8 +33,8 @@ artifacts into either consumer.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-016-AC-1 | The `ix-projects` manifest pins `ix-cli-kit` by revision with `secrets` enabled; its `LINEAR_API_KEY` flow calls the shared API with env override, and adds no credential file or change to relay, cache, or drift paths. | Inspection |
-| FR-016-AC-2 | A Rust CLI manifest pins the same authoritative crate by revision with `secrets` enabled, and a credential flow calls its public API without changing argv parsing or settings paths. | Inspection |
+| FR-016-AC-1 | The `ix-projects` manifest or consumer workspace root dependencies table declares `ix-cli-kit` with `branch = "main"`, its `Cargo.lock` records the resolved commit, and `secrets` is enabled; its `LINEAR_API_KEY` flow calls the shared API with env override, and adds no credential file or change to relay, cache, or drift paths. | Inspection |
+| FR-016-AC-2 | A Rust CLI manifest or consumer workspace root dependencies table declares the same authoritative crate with `branch = "main"`, its `Cargo.lock` records the resolved commit, and `secrets` is enabled; a credential flow calls its public API without changing argv parsing or settings paths. | Inspection |
 | FR-016-AC-3 | A focused integration test in each consumer demonstrates source reporting and locked/unavailable handling without printing or persisting a secret value. | Test |
 | FR-016-AC-4 | Neither consumer contains a copied credential backend, binary, schema, or fixture from another repository. | Inspection |
 

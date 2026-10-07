@@ -69,26 +69,33 @@ The census that produced these counts asked "does it have a config FILE" and got
 | `self_update` | 1 (`quire-cli`) | channel detection, release-channel policy | **COMMITTED — the next work item after v0.1 lands.** Owner ruling: "self-update will have many [consumers]." It will be **feature-gated, default OFF** — but as a CAPABILITY gate, not a dependency gate. Measured: `quire-cli/src/self_update/` is `std`-only and adds **zero** dependencies (it never downloads, extracts, verifies a digest, replaces the running executable, or rolls back; it detects the install channel and shells out to `npm`/`cargo`). What the gate keeps out of a default build is code that can spawn external programs with inherited stdio. Detail: agent-ix/ix-cli-kit#2. |
 | `config` | — | — | **PROMOTED INTO v0.1.** 1 of 5 already implements the precedence chain by hand, unioned, with an undocumented legacy alias (`IX_SCHEMA_PATH`). Promoted because it exists and is unowned. |
 | plugin / command dispatch | 0 | a command-resolution model, a `command_not_found` disposition, a plugin manifest contract | quoin `spec/functional/FR-102-command-surface-and-oclif-retirement.md` (AC-3 `command_not_found`, AC-4 plugin command resolution) reaches a decided disposition **and** a second Rust CLI needs it. Exit code `5` is reserved for `command_not_found` and deliberately not implemented: `exit::from_code(5)` returns `None`. |
-| secrets | `ix-projects` and one Rust CLI are planned adopters | OS backend, redaction, source reporting | **IMPLEMENTED by SWM-12.** The app and CLI flow is defined in FR-014 through FR-016 and NFR-004. The capability is off by default and has target-gated OS dependencies. Consumer adoption remains a separate pinned-revision change. This does not specify a TUI login flow. |
+| secrets | `ix-projects` and one Rust CLI are planned adopters | OS backend, redaction, source reporting | **IMPLEMENTED by SWM-12.** The app and CLI flow is defined in FR-014 through FR-016 and NFR-004. The capability is off by default and has target-gated OS dependencies. Consumer adoption remains a separate branch-dependency change, with the resolved commit recorded in each consumer's lockfile. This does not specify a TUI login flow. |
 | device-auth | 0 | a polling flow, token storage, refresh, revocation | A separate written device-auth flow covering polling, refresh, and revocation is required; SWM-12 covers local credential storage only. |
 | marketplace | 0 | a registry protocol and a trust model | A registry protocol exists in specification and a Rust consumer needs to read it. |
 | stable error-code envelope | 0 | a numbering authority, a stability promise per code | Two consumers need machine-stable error identity beyond the five-member exit taxonomy. Until then `streams::DiagnosticFields` carries `reason` as free text. |
 
 ## Consuming this crate
 
-Git-rev pin. One rev string. No vendoring, no tag pins, no crates.io — `publish = false` is declared explicitly in `Cargo.toml`.
+Branch declaration; lockfile revision. Consumers declare the `main`
+branch, and Cargo records the resolved commit in each consumer's `Cargo.lock`.
+Keep the lockfile committed and update it deliberately when moving to a newer
+kit commit. No vendoring, no tag pins, no crates.io — `publish = false` is
+declared explicitly in `Cargo.toml`.
 
 ```toml
 [dependencies]
-ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", rev = "<40-hex sha>" }
+ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", branch = "main" }
 ```
 
-A tag pin drifts from a rev pin the moment one repository uses each: the ecosystem already has `quire-rs/Cargo.toml:69` pinning `ix-trace-rs` by `tag = "v0.1.1"` while five other repositories pin `rev = 2ce4ebf…`, which is one dependency presenting as two.
+The manifest names the branch; `Cargo.lock` records the commit actually used.
+Cargo uses that resolved commit when the lockfile entry exists, with or without
+`--locked`. A `cargo update` or missing lockfile entry can move the resolution;
+`--locked` refuses to rewrite the lockfile.
 
-Consumers that need the optional credential API enable it on the same pin:
+Consumers that need the optional credential API enable it on the same branch dependency:
 
 ```toml
-ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", rev = "<40-hex sha>", features = ["secrets"] }
+ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", branch = "main", features = ["secrets"] }
 ```
 
 The application supplies its own scope and key and decides when to reveal a
@@ -97,7 +104,7 @@ choose a path.
 
 ### Dependency versions
 
-Caret ranges floored at the ecosystem's highest observed pin (`serde 1.0.229`, `serde_json 1.0.151`, `thiserror 2.0.20`), not `=` pins. Two exact pins on one crate cannot coexist in a graph, so an `=`-pinned foundation would make adoption a lockstep version migration for every consumer. Leaf binaries keep their exact pins; this crate states a floor, and its own gates are reproducible from the committed `Cargo.lock`.
+Caret requirements are floored at versions compatible with first-party consumer pins (`serde 1.0.228`, `serde_json 1.0.151`, `thiserror 2.0.20`), not `=` pins. The kit does not require serde 1.0.229 for an API. Two exact pins on one crate cannot coexist in a graph, so an `=`-pinned foundation would make adoption a lockstep version migration for every consumer. Leaf binaries keep their exact pins; this crate states a compatible floor, and its own gates are reproducible from the committed `Cargo.lock`.
 
 There is **no `clap` dependency** and no exported `Parser`-derived root command. `engineering-assurance` compiles clap with `default-features = false` and no derive feature, so a foundation exporting a derived command could not be adopted there at all. Selector types implement `FromStr`, which `clap::value_parser!`, a hand-rolled argv loop and a config file all consume alike. The consequence is that the survey's hardest pin conflict — `clap =4.5.47` derive-off against `=4.6.0` derive-on — never reaches this crate.
 
