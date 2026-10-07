@@ -40,13 +40,14 @@
 //!
 //! # Dependency versions
 //!
-//! The three shared dependencies are declared as **caret ranges floored at the
-//! ecosystem's highest observed pin** (`serde 1.0.229`, `serde_json 1.0.151`,
-//! `thiserror 2.0.20` — all engineering-assurance's). Two exact `=` pins on one
-//! crate cannot coexist in a graph, so a foundation crate that pinned exactly
-//! would force every consumer to change its own pins in the same commit as
-//! adoption. Leaf binaries keep their exact pins; this crate states a floor.
-//! Its own gates are reproducible from its committed `Cargo.lock`.
+//! The three shared dependencies use **caret requirements** with floors
+//! compatible with first-party consumer pins: `serde 1.0.228`,
+//! `serde_json 1.0.151`, and `thiserror 2.0.20`. The kit has no API requirement
+//! for `serde 1.0.229`. Two exact `=` pins on one crate cannot coexist in a
+//! graph, so a foundation crate that pinned exactly would force every consumer
+//! to change its own pins in the same commit as adoption. Leaf binaries keep
+//! their exact pins; this crate states a floor. Its own gates are reproducible
+//! from its committed `Cargo.lock`.
 
 #![forbid(unsafe_code)]
 

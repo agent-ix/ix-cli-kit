@@ -19,11 +19,11 @@ path = "src/lib.rs"
 # Caret ranges, not `=` pins, and the reason is in src/lib.rs's header: two
 # exact pins on one crate cannot coexist in a graph, so a shared crate that
 # pinned exactly would make adoption a lockstep version migration. The floor is
-# the ecosystem's highest observed pin (engineering-assurance's). Leaf binaries
-# keep their `=` pins; this repository's own gates are reproducible from the
-# committed Cargo.lock.
+# the lowest exact serde pin currently used by first-party consumers; there is
+# no API requirement for serde 1.0.229. Leaf binaries keep their `=` pins; this
+# repository's own gates are reproducible from the committed Cargo.lock.
 [dependencies]
-serde = { version = "1.0.229", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 
