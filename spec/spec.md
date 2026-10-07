@@ -33,8 +33,8 @@ Requirements FR-001 through FR-013 describe shipped behaviour ported into this
 crate. Requirements FR-014 through FR-016 and NFR-004 specify the SWM-12
 credential extension. FR-014, FR-015 and NFR-004 are implemented behind the
 off-by-default `secrets` feature; FR-016 describes separate downstream consumer
-adoption work. FR-017 specifies caller-owned exit-code pass-through without changing
-the five-member `Outcome` taxonomy.
+adoption work. FR-017 is a new, unimplemented caller-owned exit-code pass-through
+extension that leaves the five-member `Outcome` taxonomy unchanged.
 
 ---
 
@@ -88,8 +88,9 @@ This specification does **not** govern:
 
 ### 3.1 System Description
 
-`ix-cli-kit` is a `no-argv` Rust library crate. Its five modules were each moved from
-an existing implementation in this ecosystem rather than invented:
+`ix-cli-kit` is a `no-argv` Rust library crate. Its five shipped modules were each
+moved from an existing implementation in this ecosystem. FR-017 is a new,
+unimplemented extension for caller-owned exit-code pass-through:
 
 | module | moved from |
 |---|---|
@@ -206,10 +207,10 @@ Identifiers are immutable once assigned. Test-case identifiers correspond to the
 
 Functional requirements SHALL define observable behaviour, be atomic, and be testable
 through explicit criteria. They SHALL NOT encode a consuming application's policy.
-FR-001 through FR-013 remain a 1:1 port. FR-017 is a caller-owned exit-code extension:
-it preserves the supplied number without interpreting consumer policy. The SWM-12
-requirements describe a new, unimplemented extension and must not be read as shipped
-behaviour.
+FR-001 through FR-013 remain a 1:1 port. FR-017 is new and unimplemented: it preserves
+the supplied caller-owned number without interpreting consumer policy. The SWM-12
+requirements also describe new, unimplemented extensions and must not be read as
+shipped behaviour.
 
 ---
 
@@ -226,6 +227,10 @@ behaviour.
 
 A non-zero status does not imply an absent payload. Callers SHALL ask
 `Outcome::carries_payload()` rather than comparing the status to zero.
+
+For a binary using FR-017's caller-owned pass-through, `Outcome::from_code()` and
+`Outcome::carries_payload()` describe only the kit's `Outcome` taxonomy; they do not
+describe the meaning or payload status of the binary's caller-owned exit codes.
 
 An unresolvable provenance value is reported as `unknown`, never as a plausible
 substitute.
