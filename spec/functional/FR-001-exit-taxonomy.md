@@ -63,4 +63,6 @@ not diverge.
 ## Dependencies
 
 - **Upstream**: [US-001](../usecase/US-001-one-exit-check-for-two-tools.md)
-- **Downstream**: [FR-002](./FR-002-reserved-exit-status.md) reserves the adjacent status
+- **Downstream**: [FR-002](./FR-002-reserved-exit-status.md) reserves status `5`;
+  [FR-017](./FR-017-pass-through-caller-exit-code.md) passes through other
+  caller-owned values without adding them to this taxonomy.
