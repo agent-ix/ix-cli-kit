@@ -23,16 +23,18 @@ standards_alignment:
 This document defines the scope, intent, and governing requirements framework for
 `ix-cli-kit`, the shared Rust command-line foundation for the Agent-IX ecosystem.
 
-The crate owns the process **exit taxonomy**, the **stream discipline** that decides
-which stream a line goes to, **canonical JSON** encoding, **build-time version
-provenance**, the **precedence order** by which a setting's value is chosen, and a
-shared **OS credential-store contract** for local secrets.
+The crate owns the process **exit taxonomy and caller-owned exit-code pass-through**,
+the **stream discipline** that decides which stream a line goes to, **canonical JSON**
+encoding, **build-time version provenance**, the **precedence order** by which a
+setting's value is chosen, and a shared **OS credential-store contract** for local
+secrets.
 
 Requirements FR-001 through FR-013 describe shipped behaviour ported into this
 crate. Requirements FR-014 through FR-016 and NFR-004 specify the SWM-12
 credential extension. FR-014, FR-015 and NFR-004 are implemented behind the
 off-by-default `secrets` feature; FR-016 describes separate downstream consumer
-adoption work.
+adoption work. FR-017 is a new, unimplemented caller-owned exit-code pass-through
+extension that leaves the five-member `Outcome` taxonomy unchanged.
 
 ---
 
@@ -41,6 +43,8 @@ adoption work.
 ### 2.1 In Scope
 
 - The five exit statuses `0`–`4` and the reservation of status `5`.
+- Opaque caller-owned `u8` exit-code pass-through, excluding reserved status `5`;
+  the kit does not define or map the caller's code meaning.
 - The result/diagnostic stream split, diagnostic rendering, and colour resolution.
 - Recursive-key-sorted canonical JSON and a single encoder.
 - Build-time source provenance and the version-agreement assertion.
@@ -68,6 +72,9 @@ This specification does **not** govern:
 - **The `command_not_found` behaviour** at exit status 5. The status is reserved and
   deliberately unimplemented here; the behaviour is specified for `quoin-cli` in
   `ix://agent-ix/quoin/FR-102`.
+- **The meaning of caller-owned exit codes.** The caller supplies that meaning and
+  chooses the result and diagnostic streams; the kit passes through the numeric value
+  unchanged and does not interpret it as an `Outcome`.
 - **Terminal control.** Nothing opens an alternate screen, sets raw mode, asks for
   terminal size, or runs an event loop. That is TUI machinery owned by the consumer.
 - **The module-store on-disk layout.** `~/.ix/filament/modules` and
@@ -81,8 +88,8 @@ This specification does **not** govern:
 
 ### 3.1 System Description
 
-`ix-cli-kit` is a `no-argv` Rust library crate. Its five modules were each moved from
-an existing implementation in this ecosystem rather than invented:
+`ix-cli-kit` is a `no-argv` Rust library crate. Its five shipped modules were each
+moved from an existing implementation in this ecosystem:
 
 | module | moved from |
 |---|---|
@@ -91,6 +98,8 @@ an existing implementation in this ecosystem rather than invented:
 | `json` | `quire-corpus`'s `print_json`/`sort_json`, `quoin-core`'s `canonical_json`, `quire-cli`'s `encode_json` |
 | `version` | `quire-cli/build.rs` and `quoin/scripts/check-version-agreement.mjs` |
 | `config` | `quire-cli/src/commands/validate.rs`'s `scoped_registry_roots` |
+
+FR-017 is a new, unimplemented extension for caller-owned exit-code pass-through.
 
 SWM-12 adds an off-by-default `secrets` module beside `config`, in this same crate.
 This boundary follows the existing division: `config` already owns order and
@@ -171,6 +180,7 @@ The artifacts are normative; this table is an index.
 | [FR-014](./functional/FR-014-os-credential-store.md) | `secrets` | Store app-scoped credentials in the OS credential store |
 | [FR-015](./functional/FR-015-secret-source-precedence.md) | `secrets` | Resolve secret overrides and report their source without revealing values |
 | [FR-016](./functional/FR-016-shared-adoption.md) | crate | Adopt the shared credential contract from an app and a Rust CLI |
+| [FR-017](./functional/FR-017-pass-through-caller-exit-code.md) | `exit` | Pass through caller-owned exit codes without interpreting them |
 | [NFR-001](./non-functional/NFR-001-canonical-encoding-is-feature-independent.md) | `json` | Canonical encoding holds under dependency feature unification |
 | [NFR-002](./non-functional/NFR-002-provenance-and-licence-headers.md) | crate | Every source file declares its licence and the crate stays unpublished |
 | [NFR-003](./non-functional/NFR-003-dependency-floor.md) | crate | The dependency surface stays minimal and is declared as caret ranges |
@@ -198,8 +208,9 @@ Identifiers are immutable once assigned. Test-case identifiers correspond to the
 
 Functional requirements SHALL define observable behaviour, be atomic, and be testable
 through explicit criteria. They SHALL NOT encode a consuming application's policy.
-FR-001 through FR-013 remain a 1:1 port. The SWM-12 requirements describe a
-new, unimplemented extension and must not be read as shipped behaviour.
+FR-001 through FR-013 remain a 1:1 port. FR-017 is new and unimplemented: it preserves
+the supplied caller-owned number without interpreting consumer policy. It must not
+be read as shipped behaviour.
 
 ---
 
@@ -216,6 +227,10 @@ new, unimplemented extension and must not be read as shipped behaviour.
 
 A non-zero status does not imply an absent payload. Callers SHALL ask
 `Outcome::carries_payload()` rather than comparing the status to zero.
+
+For a binary using FR-017's caller-owned pass-through, `Outcome::from_code()` and
+`Outcome::carries_payload()` describe only the kit's `Outcome` taxonomy; they do not
+describe the meaning or payload status of the binary's caller-owned exit codes.
 
 An unresolvable provenance value is reported as `unknown`, never as a plausible
 substitute.

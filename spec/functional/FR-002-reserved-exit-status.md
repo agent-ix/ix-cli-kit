@@ -50,4 +50,7 @@ unilateral claiming of a status is exactly how the five surveyed taxonomies dive
 
 - **Upstream**: [FR-001](./FR-001-exit-taxonomy.md) defines the taxonomy this reserves
   against; `ix://agent-ix/quoin/FR-102` owns the behaviour.
-- **Downstream**: `quoin-cli`, when it exists.
+- **Downstream**: `quoin-cli`, when it exists; [FR-017](./FR-017-pass-through-caller-exit-code.md)
+  rejects caller-supplied status `5` in its wrapper. This wrapper guard preserves the
+  published reservation; it does not enforce the reservation on consumers that bypass
+  the wrapper.
