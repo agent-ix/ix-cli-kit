@@ -3,10 +3,11 @@
 
 //! The exit taxonomy every Agent-IX Rust CLI reports.
 //!
-//! Adopted **verbatim** from `quoin-core`'s `protocol::Outcome`
-//! (`agent-ix/quoin`, `rust/crates/quoin-core/src/protocol.rs`). This module is
-//! a MOVE, not a second opinion: when quoin-core adopts this crate its own file
-//! is deleted, so the two must never diverge.
+//! The [`Outcome`] taxonomy is adopted **verbatim** from `quoin-core`'s
+//! `protocol::Outcome` (`agent-ix/quoin`, `rust/crates/quoin-core/src/protocol.rs`).
+//! That taxonomy is a MOVE, not a second opinion: when quoin-core adopts this crate
+//! its own file is deleted, so the two must never diverge. The caller-owned exit-code
+//! pass-through in [`caller_exit_code`] is a separate kit extension.
 //!
 //! # Why this is shared
 //!
@@ -54,6 +55,10 @@ pub struct CallerExitCodeError {
 /// Every value except [`RESERVED_COMMAND_NOT_FOUND`] passes through unchanged.
 /// The reserved value returns [`CallerExitCodeError`] so the caller can choose a
 /// status according to its own policy.
+///
+/// Callers must handle the error explicitly. Do not return it from `main` or
+/// propagate it with `?` into `main`: `std::process::Termination` would turn it into
+/// exit status 1 and print an error to stderr.
 ///
 /// # Errors
 ///

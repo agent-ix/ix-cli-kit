@@ -3,23 +3,19 @@
 
 //! Public API contract for caller-owned process exit codes.
 
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::indexing_slicing,
-    reason = "in a test, a panic IS the failure report; the production lints stand"
-)]
-
 use std::process::ExitCode;
 
-use ix_cli_kit::exit::{CallerExitCodeError, RESERVED_COMMAND_NOT_FOUND, caller_exit_code};
+use ix_cli_kit::exit::{CallerExitCodeError, caller_exit_code};
+
+fn assert_error_and_display<T: std::error::Error + std::fmt::Display>() {}
+
+const _: fn() = assert_error_and_display::<CallerExitCodeError>;
 
 /// Trace: FR-017-AC-1, FR-017-AC-2
 #[test]
 fn tc_050_caller_exit_codes_pass_through_except_the_reserved_status() {
     for code in 0..=u8::MAX {
-        if code == RESERVED_COMMAND_NOT_FOUND {
+        if code == 5 {
             continue;
         }
 
@@ -31,10 +27,10 @@ fn tc_050_caller_exit_codes_pass_through_except_the_reserved_status() {
     }
 
     assert_eq!(
-        caller_exit_code(RESERVED_COMMAND_NOT_FOUND),
+        caller_exit_code(5),
         Err(CallerExitCodeError {
-            rejected_code: RESERVED_COMMAND_NOT_FOUND,
-            reserved_code: RESERVED_COMMAND_NOT_FOUND,
+            rejected_code: 5,
+            reserved_code: 5,
         })
     );
 }

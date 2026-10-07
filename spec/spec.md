@@ -33,8 +33,8 @@ Requirements FR-001 through FR-013 describe shipped behaviour ported into this
 crate. Requirements FR-014 through FR-016 and NFR-004 specify the SWM-12
 credential extension. FR-014, FR-015 and NFR-004 are implemented behind the
 off-by-default `secrets` feature; FR-016 describes separate downstream consumer
-adoption work. FR-017 is a new, unimplemented caller-owned exit-code pass-through
-extension that leaves the five-member `Outcome` taxonomy unchanged.
+adoption work. FR-017 specifies the caller-owned exit-code pass-through implemented in
+this crate, leaving the five-member `Outcome` taxonomy unchanged.
 
 ---
 
@@ -99,7 +99,7 @@ moved from an existing implementation in this ecosystem:
 | `version` | `quire-cli/build.rs` and `quoin/scripts/check-version-agreement.mjs` |
 | `config` | `quire-cli/src/commands/validate.rs`'s `scoped_registry_roots` |
 
-FR-017 is a new, unimplemented extension for caller-owned exit-code pass-through.
+FR-017's caller-owned exit-code pass-through extension is implemented in this crate.
 
 SWM-12 adds an off-by-default `secrets` module beside `config`, in this same crate.
 This boundary follows the existing division: `config` already owns order and
@@ -208,9 +208,9 @@ Identifiers are immutable once assigned. Test-case identifiers correspond to the
 
 Functional requirements SHALL define observable behaviour, be atomic, and be testable
 through explicit criteria. They SHALL NOT encode a consuming application's policy.
-FR-001 through FR-013 remain a 1:1 port. FR-017 is new and unimplemented: it preserves
-the supplied caller-owned number without interpreting consumer policy. It must not
-be read as shipped behaviour.
+FR-001 through FR-013 remain a 1:1 port. FR-017 is an implemented caller-owned
+exit-code extension: it preserves the supplied number without interpreting consumer
+policy.
 
 ---
 
