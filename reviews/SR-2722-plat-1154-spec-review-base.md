@@ -38,3 +38,11 @@ ix-projects' root `Cargo.toml` already declares shared dependencies at the works
 and the projects-api crate is a member. Fix: say "the `ix-projects` dependency declaration
 (workspace or member manifest)". AC-2 ("A Rust CLI manifest") has the same latent ambiguity
 and is listed as related.
+
+## Dispositions
+
+Round 1 was reviewed at fix head 550c14f0405a9327b8556dca36b2e5055fd922f7 (tree a228fe25).
+
+| FND | Outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 550c14f0405a9327b8556dca36b2e5055fd922f7: FR-016-AC-1 and FR-016-AC-2 now accept "manifest or consumer workspace root dependencies table". The ids and the matrix row status are unchanged |

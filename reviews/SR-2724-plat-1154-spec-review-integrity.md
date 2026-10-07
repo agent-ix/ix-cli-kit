@@ -43,3 +43,25 @@ StR-002 is the stakeholder root for adoptability. Its Context and Assumptions se
 grounds the caret-range rationale on revision pinning. Replace "pin this crate by git
 revision" with "declare this crate by git branch and record the commit in their lockfile".
 The caret-range reasoning that follows is unaffected.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | low | StR-003-VC-1, the stakeholder parent of FR-016 (`satisfied_by`), still says "use the same pinned shared API". This is residual pin wording that the review pass's "pin" search missed because it matched only the whole word. A lockfile does fix the commit, so it is not strictly false, but it reads as the old revision-pin model that FR-016 and the SRS now replace | spec/stakeholder/StR-003-local-credentials.md:32 |
+
+### FND-003 detail
+
+Suggested fix: "use the same shared API, declared as one `branch = "main"` dependency with
+the resolved commit in each consumer's `Cargo.lock`", or simply "the same shared API". The
+validation method is unaffected.
+
+## Dispositions
+
+Round 1 was reviewed at fix head 550c14f0405a9327b8556dca36b2e5055fd922f7 (tree a228fe25).
+
+| FND | Outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 550c14f0405a9327b8556dca36b2e5055fd922f7: spec/spec.md:56-57, 84-85 and 112-113 now describe `branch = "main"` declarations with the resolved commit in each consumer's `Cargo.lock` |
+| FND-002 | fixed | 550c14f0405a9327b8556dca36b2e5055fd922f7: StR-002:58-61 now reads "It is assumed consumers declare this crate with `branch = "main"` and retain the resolved commit in their own `Cargo.lock`." |
+| FND-003 | still-open | Found in this disposition pass. No fix has landed yet |

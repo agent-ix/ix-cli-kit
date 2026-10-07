@@ -79,3 +79,15 @@ could wrongly conclude that `--locked` is what keeps the pinned commit, and trea
 committed lock as optional when `--locked` is set. Suggested wording: "Cargo builds from the
 commit recorded in `Cargo.lock`; `cargo update -p ix-cli-kit` moves it, and `--locked` fails
 rather than rewriting the lock."
+
+## Dispositions
+
+Round 1 was reviewed at fix head 550c14f0405a9327b8556dca36b2e5055fd922f7 (tree a228fe25). Each
+outcome below was checked against the text at that head. Cargo.lock and src/ are unchanged
+since the reviewed head.
+
+| FND | Outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 550c14f0405a9327b8556dca36b2e5055fd922f7: Cargo.toml:10-13 now reads "Consumers declare the main branch and retain the resolved commit in their Cargo.lock (see README, "Consuming this crate")." |
+| FND-002 | fixed | 550c14f0405a9327b8556dca36b2e5055fd922f7: README.md:72 now reads "a separate branch-dependency change, with the resolved commit recorded in each consumer's lockfile"; README.md:95 now reads "enable it on the same branch dependency" |
+| FND-003 | fixed | 550c14f0405a9327b8556dca36b2e5055fd922f7: README.md:90-93 now says Cargo uses the resolved commit "with or without `--locked`", and that `--locked` refuses to rewrite the lockfile |
