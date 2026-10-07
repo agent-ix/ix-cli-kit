@@ -3,10 +3,11 @@
 
 //! The exit taxonomy every Agent-IX Rust CLI reports.
 //!
-//! Adopted **verbatim** from `quoin-core`'s `protocol::Outcome`
-//! (`agent-ix/quoin`, `rust/crates/quoin-core/src/protocol.rs`). This module is
-//! a MOVE, not a second opinion: when quoin-core adopts this crate its own file
-//! is deleted, so the two must never diverge.
+//! The [`Outcome`] taxonomy is adopted **verbatim** from `quoin-core`'s
+//! `protocol::Outcome` (`agent-ix/quoin`, `rust/crates/quoin-core/src/protocol.rs`).
+//! That taxonomy is a MOVE, not a second opinion: when quoin-core adopts this crate
+//! its own file is deleted, so the two must never diverge. The caller-owned exit-code
+//! pass-through in [`caller_exit_code`] is a separate kit extension.
 //!
 //! # Why this is shared
 //!
@@ -38,6 +39,41 @@
 /// diverged. [`Outcome::from_code`] returns `None` for 5 — an unclaimed status
 /// is an honest `None`, not a guess.
 pub const RESERVED_COMMAND_NOT_FOUND: u8 = 5;
+
+/// An attempted caller-owned exit code that conflicts with the reserved status.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[error("caller exit code {rejected_code} is reserved (reserved code {reserved_code})")]
+pub struct CallerExitCodeError {
+    /// The caller-supplied value rejected by [`caller_exit_code`].
+    pub rejected_code: u8,
+    /// The reserved value that caused the rejection.
+    pub reserved_code: u8,
+}
+
+/// Convert a caller-owned status into a process exit code without interpreting it.
+///
+/// Every value except [`RESERVED_COMMAND_NOT_FOUND`] passes through unchanged.
+/// The reserved value returns [`CallerExitCodeError`] so the caller can choose a
+/// status according to its own policy.
+///
+/// Callers must handle the error explicitly. Do not return it from `main` or
+/// propagate it with `?` into `main`: `std::process::Termination` would turn it into
+/// exit status 1 and print an error to stderr.
+///
+/// # Errors
+///
+/// Returns [`CallerExitCodeError`] when `code` is
+/// [`RESERVED_COMMAND_NOT_FOUND`].
+pub fn caller_exit_code(code: u8) -> Result<std::process::ExitCode, CallerExitCodeError> {
+    if code == RESERVED_COMMAND_NOT_FOUND {
+        return Err(CallerExitCodeError {
+            rejected_code: code,
+            reserved_code: RESERVED_COMMAND_NOT_FOUND,
+        });
+    }
+
+    Ok(std::process::ExitCode::from(code))
+}
 
 /// How the process terminated, and therefore whether stdout is worth reading.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

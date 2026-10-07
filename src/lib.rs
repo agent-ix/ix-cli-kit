@@ -7,7 +7,7 @@
 //!
 //! | module | what it owns |
 //! |---|---|
-//! | [`exit`] | the 0/1/2/3/4 exit taxonomy, and `carries_payload()` |
+//! | [`exit`] | the 0/1/2/3/4 `Outcome` taxonomy and caller-owned exit-code pass-through |
 //! | [`streams`] | results on stdout, diagnostics on stderr, colour resolution |
 //! | [`json`] | canonical (recursively key-sorted) JSON, and one encoder |
 //! | [`version`] | build-time source provenance, and the agreement assertion |
