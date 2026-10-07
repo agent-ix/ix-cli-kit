@@ -7,9 +7,10 @@ description = "Shared Rust CLI foundation for the Agent-IX ecosystem: exit taxon
 authors = ["Agent IX <dev@agent-ix.com>"]
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/agent-ix/ix-cli-kit"
-# No crates.io. Consumers git-rev pin this crate (see README, "Consuming this
-# crate"). Declared explicitly rather than left to default: the survey found 3
-# of 5 Rust repositories in this ecosystem silently publishable.
+# No crates.io. Consumers declare the main branch and retain the resolved
+# commit in their Cargo.lock (see README, "Consuming this crate"). Declared
+# explicitly rather than left to default: the survey found 3 of 5 Rust
+# repositories in this ecosystem silently publishable.
 publish = false
 
 [lib]

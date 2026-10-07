@@ -53,7 +53,8 @@ this crate, leaving the five-member `Outcome` taxonomy unchanged.
 - The crate-level boundary rules: no argv parsing, no `clap` dependency, and no path
   chosen on a consumer's behalf.
 - App-scoped OS credential-store operations, secret-source precedence and reporting,
-  non-disclosure, and pinned-revision adoption by `ix-projects` and one Rust CLI.
+  non-disclosure, and `branch = "main"` adoption by `ix-projects` and one Rust CLI,
+  with the resolved commit recorded in each consumer's `Cargo.lock`.
 
 ### 2.2 Out of Scope
 
@@ -80,7 +81,8 @@ This specification does **not** govern:
 - **The module-store on-disk layout.** `~/.ix/filament/modules` and
   `~/.ix/filament/registry.json` are owned by `quoin` (producer) and read by
   `quire-rs`. This crate names no path.
-- **Publication.** The crate is `publish = false`; consumers pin it by git revision.
+- **Publication.** The crate is `publish = false`; consumers declare its `main`
+  branch and record the resolved commit in their own `Cargo.lock`.
 
 ---
 
@@ -107,7 +109,8 @@ source reporting, while consumers own settings paths and schemas. A separate
 crate would require a second dependency and a second source-reporting contract
 for this small local-settings extension. The new module owns secret-specific
 source selection and uses the OS store; it does not turn ordinary settings files
-into a credential backend. Consumers pin this one crate by git revision.
+into a credential backend. Consumers declare this one crate with `branch = "main"`;
+their `Cargo.lock` records the resolved commit.
 
 The 2026-09-12 survey that scoped the crate found five Rust CLIs — `build-chain`,
 `quire-cli`, `engineering-assurance`, `quire-corpus`, `quoin-core` — each with its own
