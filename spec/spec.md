@@ -89,8 +89,7 @@ This specification does **not** govern:
 ### 3.1 System Description
 
 `ix-cli-kit` is a `no-argv` Rust library crate. Its five shipped modules were each
-moved from an existing implementation in this ecosystem. FR-017 is a new,
-unimplemented extension for caller-owned exit-code pass-through:
+moved from an existing implementation in this ecosystem:
 
 | module | moved from |
 |---|---|
@@ -99,6 +98,8 @@ unimplemented extension for caller-owned exit-code pass-through:
 | `json` | `quire-corpus`'s `print_json`/`sort_json`, `quoin-core`'s `canonical_json`, `quire-cli`'s `encode_json` |
 | `version` | `quire-cli/build.rs` and `quoin/scripts/check-version-agreement.mjs` |
 | `config` | `quire-cli/src/commands/validate.rs`'s `scoped_registry_roots` |
+
+FR-017 is a new, unimplemented extension for caller-owned exit-code pass-through.
 
 SWM-12 adds an off-by-default `secrets` module beside `config`, in this same crate.
 This boundary follows the existing division: `config` already owns order and
@@ -208,9 +209,8 @@ Identifiers are immutable once assigned. Test-case identifiers correspond to the
 Functional requirements SHALL define observable behaviour, be atomic, and be testable
 through explicit criteria. They SHALL NOT encode a consuming application's policy.
 FR-001 through FR-013 remain a 1:1 port. FR-017 is new and unimplemented: it preserves
-the supplied caller-owned number without interpreting consumer policy. The SWM-12
-requirements also describe new, unimplemented extensions and must not be read as
-shipped behaviour.
+the supplied caller-owned number without interpreting consumer policy. It must not
+be read as shipped behaviour.
 
 ---
 
