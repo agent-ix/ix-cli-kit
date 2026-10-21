@@ -46,7 +46,8 @@ this crate, leaving the five-member `Outcome` taxonomy unchanged.
 - Opaque caller-owned `u8` exit-code pass-through, excluding reserved status `5`;
   the kit does not define or map the caller's code meaning.
 - The result/diagnostic stream split, diagnostic rendering, and colour resolution.
-- Recursive-key-sorted canonical JSON and a single encoder.
+- Recursive-key-sorted canonical JSON, a single encoder, and lexical re-indenting
+  for already validated compact JSON.
 - Build-time source provenance and the version-agreement assertion.
 - The configuration **precedence order** — `flag > env > file > default` — and the
   **union** semantics of an ordered search path.

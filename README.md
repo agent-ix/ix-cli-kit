@@ -14,7 +14,7 @@ The name is deliberate and should not drift back. An earlier working name, `ix-c
 |---|---|
 | `exit` | the 0/1/2/3/4 exit taxonomy, and `carries_payload()` |
 | `streams` | results on stdout, diagnostics on stderr, colour resolution |
-| `json` | canonical (recursively key-sorted) JSON, and one encoder |
+| `json` | canonical (recursively key-sorted) JSON, one encoder, and lexical re-indenting |
 | `version` | build-time source provenance, and the agreement assertion |
 | `config` | the precedence ORDER — flag > env > file > default, and unioned search paths |
 | `secrets` | opt-in app-scoped OS credential storage and secret-source precedence |
@@ -31,11 +31,16 @@ Ported from `quoin-core/src/protocol.rs:28-72`, tests and all. Five of five surv
 
 Results go to stdout; diagnostics go to stderr; results are never coloured. The rationale comment carried over from `quire-cli/src/io.rs:206-221` records the incident rather than the intention: a run that produced a 0-byte stdout file while 90,462 bytes went to stderr.
 
-Rendering and emission are separable (`Record::render_human`, `Record::render_json`, `Record::write`) so a consumer that places its own output — a TUI — can use the same diagnostics without this crate choosing a sink. `ColorChoice::decide(is_terminal, no_color_set)` is pure, `ColorDecision` carries the facts behind the boolean, and `stdout_is_terminal()` / `stderr_is_terminal()` are exported. Nothing here opens an alternate screen, sets raw mode, asks terminal size or runs an event loop.
+Rendering and emission are separable (`Record::render_human`, `Record::render_json`, `Record::write`) so a consumer that places its own output — a TUI — can use the same diagnostics without this crate choosing a sink. `ColorChoice::decide(is_terminal, no_color_set)` is pure, `ColorDecision` carries the facts behind the boolean, and `ColorChoice::resolve_bool()` supplies a writer with only the resolved boolean. `stdout_is_terminal()` / `stderr_is_terminal()` are exported. Nothing here opens an alternate screen, sets raw mode, asks terminal size or runs an event loop.
 
 ### `json` — canonical means recursively key-sorted, explicitly
 
 `serde_json`'s `preserve_order` feature is unified across a Cargo graph. `quire-corpus` enables it and `quoin-core` deliberately does not, so a canonicaliser that relies on `BTreeMap` ordering is correct in one and silently wrong in the other. `json::canonical` sorts at every depth itself and is therefore correct under either feature set.
+
+For compact JSON bytes that a caller has already validated and whose key order
+must survive, `json::pretty_validated_json_bytes` inserts indentation without
+re-serialising. It retains every original byte; `json::encode_canonical` has a
+different contract and sorts object keys.
 
 ### `version` — provenance, and the assertion nobody had
 

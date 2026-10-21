@@ -9,7 +9,7 @@
 //! |---|---|
 //! | [`exit`] | the 0/1/2/3/4 `Outcome` taxonomy and caller-owned exit-code pass-through |
 //! | [`streams`] | results on stdout, diagnostics on stderr, colour resolution |
-//! | [`json`] | canonical (recursively key-sorted) JSON, and one encoder |
+//! | [`json`] | canonical (recursively key-sorted) JSON, one encoder, and lexical re-indenting |
 //! | [`version`] | build-time source provenance, and the agreement assertion |
 //! | [`config`] | the precedence ORDER — flag > env > file > default, and unioned search paths |
 //! | [`secrets`] | opt-in OS credential storage and secret-source precedence |
