@@ -17,7 +17,7 @@ whitespace, so that two runs producing the same value produce the same bytes.
 This is the form `quoin-core` speaks. `quoin-core` is a subprocess whose response types
 are GENERATED from `schemars`, so field order is whatever the generator emits; a
 byte-stable payload cannot come from the type definition and has to come from the
-encoder. Byte stability is what makes a payload diffable, hashable and comparable
+encoder. Byte stability is what makes a payload diffable and comparable
 between the retained TypeScript implementation and the Rust one.
 
 ## Inputs
@@ -30,6 +30,8 @@ between the retained TypeScript implementation and the Rust one.
 - `canonical(value) -> Value`, key-sorted at every depth.
 - `sort_in_place(&mut Value)`.
 - `encode(value, pretty) -> Result<String, JsonError>`.
+- `write_compact(writer, value) -> io::Result<()>`, streaming without a
+  complete-output allocation.
 - `encode_canonical(value) -> Result<String, JsonError>`.
 - `pretty_validated_json_bytes(compact) -> Vec<u8>` for already validated compact JSON.
 
@@ -45,6 +47,11 @@ between the retained TypeScript implementation and the Rust one.
 - For already validated compact JSON, the crate SHALL offer a lexical re-indenter
   that preserves object key order and every original byte, inserting only
   insignificant whitespace outside strings.
+- The crate SHALL stream compact JSON to a caller's writer without sorting
+  object keys or allocating a complete output string.
+- If a writer fails, then the crate SHALL return an I/O error with that
+  writer failure's error kind. If serialization fails, then the crate SHALL
+  return the serialization failure as an I/O error.
 
 ## Constraints
 
@@ -63,6 +70,8 @@ between the retained TypeScript implementation and the Rust one.
 | FR-006-AC-4 | A value that cannot be JSON yields an error whose message names the subject being encoded. | Test |
 | FR-006-AC-5 | A payload captured from the process's standard output has sorted keys at every depth and no insignificant whitespace. | Test (TC-012) |
 | FR-006-AC-6 | Lexical re-indenting preserves key order, escapes, and original tokens while indenting nonempty nested containers. | Test |
+| FR-006-AC-7 | Streaming compact JSON emits the same bytes and field order as `encode(value, false)`, without appending a newline or waiting for serialization to finish before writing. | Test |
+| FR-006-AC-8 | Given a writer that fails with `BrokenPipe`, streaming returns `BrokenPipe`; given a serializer that fails after writing a prefix, streaming returns its serialization error and leaves that prefix in the writer. | Test |
 
 ## Dependencies
 
