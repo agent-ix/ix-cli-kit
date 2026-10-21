@@ -25,6 +25,8 @@
 //! only form of the function that is true of both consumers this crate already
 //! has.
 
+use std::io::{self, Write};
+
 use serde::Serialize;
 use serde_json::Value;
 
@@ -98,6 +100,26 @@ pub fn encode<T: Serialize + ?Sized>(value: &T, pretty: bool) -> Result<String, 
         serde_json::to_string(value)
     };
     result.map_err(|source| JsonError::new("json encode", source))
+}
+
+/// Stream compact JSON to a writer without allocating the complete output.
+///
+/// Object keys retain the order supplied by the serialized value. This writes
+/// no trailing newline; callers that use JSON lines append their own delimiter.
+/// A failure may leave a partial JSON value in the writer.
+///
+/// # Errors
+///
+/// Serialization failures return [`io::ErrorKind::Other`]. Writer failures
+/// retain their original [`io::ErrorKind`], including `BrokenPipe`.
+pub fn write_compact<T: Serialize + ?Sized, W: Write + ?Sized>(
+    writer: &mut W,
+    value: &T,
+) -> io::Result<()> {
+    serde_json::to_writer(writer, value).map_err(|error| match error.io_error_kind() {
+        Some(kind) => io::Error::new(kind, error),
+        None => io::Error::other(error),
+    })
 }
 
 /// Canonicalise and encode in one step — the form a report writer wants.
@@ -187,6 +209,8 @@ fn indent(output: &mut Vec<u8>, depth: usize) {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use serde::ser::{SerializeSeq, Serializer};
+
     use super::*;
 
     /// Trace: FR-006-AC-1
@@ -232,6 +256,62 @@ mod tests {
         let value = serde_json::json!({ "a": 1, "b": 2 });
         assert!(!encode(&value, false).unwrap().contains('\n'));
         assert!(encode(&value, true).unwrap().contains('\n'));
+    }
+
+    /// Trace: FR-006-AC-3, FR-006-AC-7
+    #[test]
+    fn streamed_compact_json_matches_existing_encoder_bytes_and_field_order() {
+        #[derive(Serialize)]
+        struct Payload<'a> {
+            z: &'a str,
+            a: [u8; 2],
+        }
+        let value = Payload {
+            z: "quote \" and newline\n",
+            a: [1, 2],
+        };
+        let mut streamed = Vec::new();
+        write_compact(&mut streamed, &value).unwrap();
+        assert_eq!(streamed, br#"{"z":"quote \" and newline\n","a":[1,2]}"#);
+        assert_eq!(streamed, encode(&value, false).unwrap().as_bytes());
+    }
+
+    /// Trace: FR-006-AC-7, FR-006-AC-8
+    #[test]
+    fn streamed_json_writes_before_serialization_finishes() {
+        struct FailsAfterFirst;
+        impl Serialize for FailsAfterFirst {
+            fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                let mut sequence = serializer.serialize_seq(Some(2))?;
+                sequence.serialize_element(&1)?;
+                Err(serde::ser::Error::custom("refused second element"))
+            }
+        }
+
+        let mut streamed = Vec::new();
+        let error = write_compact(&mut streamed, &FailsAfterFirst).unwrap_err();
+        assert_eq!(streamed, b"[1");
+        assert_eq!(error.kind(), io::ErrorKind::Other);
+        assert!(error.to_string().contains("refused second element"));
+    }
+
+    /// Trace: FR-006-AC-8
+    #[test]
+    fn streamed_json_preserves_writer_error_kind() {
+        struct BrokenPipe;
+        impl Write for BrokenPipe {
+            fn write(&mut self, _: &[u8]) -> io::Result<usize> {
+                Err(io::Error::new(io::ErrorKind::BrokenPipe, "reader closed"))
+            }
+
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+
+        let error = write_compact(&mut BrokenPipe, &1).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::BrokenPipe);
+        assert!(error.to_string().contains("reader closed"));
     }
 
     /// Trace: FR-006-AC-1

@@ -42,6 +42,10 @@ must survive, `json::pretty_validated_json_bytes` inserts indentation without
 re-serialising. It retains every original byte; `json::encode_canonical` has a
 different contract and sorts object keys.
 
+`json::write_compact` streams a serializable value directly to an `io::Write`
+sink, preserving the value's field order and writer error kinds such as
+`BrokenPipe`. It adds no newline; callers own output framing.
+
 ### `version` — provenance, and the assertion nobody had
 
 Build-time `cargo:rustc-env` provenance ported from `quire-cli/build.rs:19-57`, plus the piece the ecosystem was missing in Rust: a reusable test helper asserting that `--version` and `--help` agree and that a clean tag reports itself. The only existing implementation was `quoin/scripts/check-version-agreement.mjs` — Node, checking the built binary rather than a source constant. `unknown` is never replaced with something plausible.
