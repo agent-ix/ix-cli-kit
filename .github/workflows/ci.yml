@@ -58,11 +58,17 @@ jobs:
       - name: Lint secrets feature
         run: cargo clippy --all-targets --features secrets -- -D warnings
 
+      - name: Lint all features
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
       - name: Test
         run: cargo test
 
       - name: Test secrets API contract
         run: cargo test --features secrets --test tc_030_secrets
+
+      - name: Test all features
+        run: cargo test --all-features
 
       - name: Unsafe audit
         run: bash scripts/check_unsafe_comments.sh

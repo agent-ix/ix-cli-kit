@@ -17,6 +17,11 @@ publish = false
 name = "ix_cli_kit"
 path = "src/lib.rs"
 
+[[bin]]
+name = "self_update_fixture"
+path = "src/bin/self_update_fixture.rs"
+required-features = ["self-update"]
+
 # Caret ranges, not `=` pins, and the reason is in src/lib.rs's header: two
 # exact pins on one crate cannot coexist in a graph, so a shared crate that
 # pinned exactly would make adoption a lockstep version migration. The floor is
@@ -31,6 +36,7 @@ thiserror = "2.0.20"
 [features]
 default = []
 secrets = ["dep:keyring"]
+self-update = []
 
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "3.6.3", optional = true, default-features = false, features = ["apple-native"] }

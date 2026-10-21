@@ -10,6 +10,7 @@
 //! | [`exit`] | the 0/1/2/3/4 `Outcome` taxonomy and caller-owned exit-code pass-through |
 //! | [`streams`] | results on stdout, diagnostics on stderr, colour resolution |
 //! | [`json`] | canonical (recursively key-sorted) JSON, one encoder, and lexical re-indenting |
+//! | `self_update` (opt-in) | install-channel detection and package-manager dispatch |
 //! | [`version`] | build-time source provenance, and the agreement assertion |
 //! | [`config`] | the precedence ORDER — flag > env > file > default, and unioned search paths |
 //! | [`secrets`] | opt-in OS credential storage and secret-source precedence |
@@ -54,6 +55,8 @@
 pub mod config;
 pub mod exit;
 pub mod json;
+#[cfg(feature = "self-update")]
+pub mod self_update;
 pub mod streams;
 pub mod version;
 
