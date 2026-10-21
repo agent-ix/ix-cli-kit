@@ -114,6 +114,15 @@ impl ColorChoice {
             enabled: self.decide(is_terminal, no_color_set),
         }
     }
+
+    /// Resolve to the boolean used by a diagnostic writer.
+    ///
+    /// Use [`Self::resolve`] when the caller also needs the observed terminal
+    /// and `NO_COLOR` facts.
+    #[must_use]
+    pub fn resolve_bool(self) -> bool {
+        self.resolve().enabled
+    }
 }
 
 /// A resolved colour decision **and the facts it was resolved from**.
@@ -242,6 +251,9 @@ pub struct DiagnosticFields<'a> {
     /// The identifier of the subject the diagnostic is about.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subject: Option<&'a str>,
+    /// The specific value or declaration the operator should edit.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub change_target: Option<&'a str>,
     /// What the operator should change.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remedy: Option<&'a str>,
@@ -279,6 +291,7 @@ impl<'a> Record<'a> {
                 path: None,
                 line: None,
                 subject: None,
+                change_target: None,
                 remedy: None,
             },
         }
@@ -517,6 +530,16 @@ mod tests {
         assert!(ColorChoice::Always.resolve().enabled);
     }
 
+    /// Trace: FR-005-AC-4
+    #[test]
+    fn boolean_resolution_matches_the_full_decision() {
+        for choice in [ColorChoice::Auto, ColorChoice::Always, ColorChoice::Never] {
+            assert_eq!(choice.resolve_bool(), choice.resolve().enabled);
+        }
+        assert!(ColorChoice::Always.resolve_bool());
+        assert!(!ColorChoice::Never.resolve_bool());
+    }
+
     /// Trace: FR-004-AC-1
     #[test]
     fn a_human_error_renders_byte_for_byte_the_message() {
@@ -551,6 +574,28 @@ mod tests {
         assert_eq!(
             record.render_json().unwrap(),
             r#"{"kind":"Unbacked","message":"row has no test","severity":"error","path":"spec/matrix.md","line":41}"#
+        );
+    }
+
+    /// Trace: FR-004-AC-5
+    #[test]
+    fn json_diagnostic_carries_change_target_in_field_order() {
+        let record =
+            Record::error("Invalid", "change the declaration").with_fields(DiagnosticFields {
+                subject: Some("FR-001"),
+                change_target: Some("spec/FR-001.md:12"),
+                remedy: Some("add a criterion"),
+                ..DiagnosticFields::default()
+            });
+        assert_eq!(
+            record.render_json().unwrap(),
+            r#"{"kind":"Invalid","message":"change the declaration","severity":"error","subject":"FR-001","change_target":"spec/FR-001.md:12","remedy":"add a criterion"}"#
+        );
+        assert!(
+            !Record::error("Invalid", "no target")
+                .render_json()
+                .unwrap()
+                .contains("change_target")
         );
     }
 

@@ -40,6 +40,8 @@ A crate that only offered `emit` would be unusable to both.
   in the bold-yellow escape, and SHALL reset at the end of the line.
 - The crate SHALL render the JSON shape carrying the record's kind, severity spelling,
   message, and each populated field of [`DiagnosticFields`].
+- The crate SHALL carry `change_target` separately from `subject` and `remedy`, so a
+  machine consumer can identify the specific value or declaration to edit.
 - The crate SHALL omit an unpopulated diagnostic field from the JSON shape rather than
   emit it as null.
 - If the JSON shape cannot be encoded, then the crate SHALL emit a marked
@@ -51,7 +53,7 @@ A crate that only offered `emit` would be unusable to both.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-004-CON-1 | `DiagnosticFields` is the set the ported code populates and is NOT claimed to be complete for every consumer. `quire-cli` also populates `change_target` (`validate.rs:656`, `:696`, `:716`), which v0.1 does not carry; adopting `streams` unchanged would drop it from JSON diagnostics on the validate paths. Tracked as `agent-ix/ix-cli-kit#1`. | Scope | Inspection |
+| FR-004-CON-1 | `DiagnosticFields` carries the populated `quire-cli` fields, including `change_target`. Unpopulated consumer-specific fields are outside this contract. | Scope | Inspection |
 | FR-004-CON-2 | Rendering SHALL NOT read a global, so the same record renders identically under test and under a terminal. | Interface | Test |
 
 ## Acceptance Criteria
@@ -62,6 +64,7 @@ A crate that only offered `emit` would be unusable to both.
 | FR-004-AC-2 | A warning rendered human-readably carries the `warning: ` prefix. | Test |
 | FR-004-AC-3 | The JSON shape of a record carries its kind, its severity spelling, and every populated typed field. | Test |
 | FR-004-AC-4 | A record written to an arbitrary sink appears on that sink and not on the process's streams. | Test |
+| FR-004-AC-5 | A populated `change_target` appears between `subject` and `remedy` in a JSON diagnostic; when absent it is omitted. | Test |
 
 ## Dependencies
 

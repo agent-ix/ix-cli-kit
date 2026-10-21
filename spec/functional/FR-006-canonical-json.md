@@ -1,12 +1,12 @@
 ---
 id: FR-006
-title: "Encode JSON with keys sorted at every depth and no insignificant whitespace"
+title: "Encode canonical JSON and lexically indent validated JSON"
 type: FR
 relationships:
   - target: "ix://agent-ix/ix-cli-kit/US-002"
     type: "implements"
 ---
-# FR-006: Encode JSON with keys sorted at every depth and no insignificant whitespace
+# FR-006: Encode canonical JSON and lexically indent validated JSON
 
 ## Description
 
@@ -31,6 +31,7 @@ between the retained TypeScript implementation and the Rust one.
 - `sort_in_place(&mut Value)`.
 - `encode(value, pretty) -> Result<String, JsonError>`.
 - `encode_canonical(value) -> Result<String, JsonError>`.
+- `pretty_validated_json_bytes(compact) -> Vec<u8>` for already validated compact JSON.
 
 ## Behavior
 
@@ -41,6 +42,9 @@ between the retained TypeScript implementation and the Rust one.
 - When `pretty` is requested, the crate SHALL emit indented output.
 - If a value cannot be encoded as JSON, then the crate SHALL return an error naming what
   was being encoded.
+- For already validated compact JSON, the crate SHALL offer a lexical re-indenter
+  that preserves object key order and every original byte, inserting only
+  insignificant whitespace outside strings.
 
 ## Constraints
 
@@ -58,6 +62,7 @@ between the retained TypeScript implementation and the Rust one.
 | FR-006-AC-3 | Compact output contains no space following `:` or `,`; pretty output contains newlines. | Test |
 | FR-006-AC-4 | A value that cannot be JSON yields an error whose message names the subject being encoded. | Test |
 | FR-006-AC-5 | A payload captured from the process's standard output has sorted keys at every depth and no insignificant whitespace. | Test (TC-012) |
+| FR-006-AC-6 | Lexical re-indenting preserves key order, escapes, and original tokens while indenting nonempty nested containers. | Test |
 
 ## Dependencies
 

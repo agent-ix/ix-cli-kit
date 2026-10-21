@@ -28,6 +28,7 @@ combination without a pty.
 
 - `ColorChoice::decide(is_terminal, no_color_set) -> bool`.
 - `ColorChoice::resolve() -> ColorDecision { choice, no_color_set, is_terminal, enabled }`.
+- `ColorChoice::resolve_bool() -> bool` for a writer that only needs the decision.
 - `stdout_is_terminal()` and `stderr_is_terminal()`.
 
 ## Behavior
@@ -56,6 +57,7 @@ combination without a pty.
 | FR-005-AC-1 | `decide` over all four combinations yields `Always` = true, true; `Never` = false, false; `Auto` = terminal-and-not-NO_COLOR. | Test |
 | FR-005-AC-2 | A resolved decision reports the choice, the `NO_COLOR` observation and the terminal observation alongside `enabled`. | Test |
 | FR-005-AC-3 | `ColorChoice` parses from `auto`, `always` and `never`. | Test |
+| FR-005-AC-4 | `resolve_bool()` returns the same `enabled` value as `resolve()` for each choice. | Test |
 
 ## Dependencies
 

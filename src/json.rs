@@ -112,6 +112,72 @@ pub fn encode_canonical<T: Serialize + ?Sized>(
     encode(&canonical(value)?, pretty)
 }
 
+/// Indent validated compact JSON without parsing or serialising it again.
+///
+/// The caller must validate the input as compact JSON first. This formatter
+/// inserts only insignificant whitespace, preserving object key order and all
+/// original bytes, including escape sequences and whitespace inside strings.
+/// Empty arrays and objects remain on one line.
+#[must_use]
+pub fn pretty_validated_json_bytes(compact: &[u8]) -> Vec<u8> {
+    let mut pretty = Vec::with_capacity(compact.len());
+    let mut depth = 0usize;
+    let mut quoted = false;
+    let mut escaped = false;
+
+    for (position, &byte) in compact.iter().enumerate() {
+        if quoted {
+            pretty.push(byte);
+            if escaped {
+                escaped = false;
+            } else if byte == b'\\' {
+                escaped = true;
+            } else if byte == b'"' {
+                quoted = false;
+            }
+            continue;
+        }
+
+        match byte {
+            b'"' => {
+                quoted = true;
+                pretty.push(byte);
+            }
+            b'{' | b'[' => {
+                pretty.push(byte);
+                depth += 1;
+                let closing = if byte == b'{' { b'}' } else { b']' };
+                if compact.get(position + 1) != Some(&closing) {
+                    indent(&mut pretty, depth);
+                }
+            }
+            b'}' | b']' => {
+                depth -= 1;
+                let opening = if byte == b'}' { b'{' } else { b'[' };
+                if position > 0 && compact.get(position - 1) != Some(&opening) {
+                    indent(&mut pretty, depth);
+                }
+                pretty.push(byte);
+            }
+            b',' => {
+                pretty.push(byte);
+                indent(&mut pretty, depth);
+            }
+            b':' => {
+                pretty.extend_from_slice(b": ");
+            }
+            _ => pretty.push(byte),
+        }
+    }
+
+    pretty
+}
+
+fn indent(output: &mut Vec<u8>, depth: usize) {
+    output.push(b'\n');
+    output.extend(std::iter::repeat_n(b' ', depth * 2));
+}
+
 #[cfg(test)]
 #[allow(
     clippy::unwrap_used,
@@ -185,5 +251,30 @@ mod tests {
         let error = canonical(&bad).unwrap_err();
         assert_eq!(error.context, "canonical json");
         assert!(error.to_string().starts_with("canonical json: "));
+    }
+
+    /// Trace: FR-006-AC-6
+    #[test]
+    fn lexical_pretty_print_preserves_key_order_and_original_tokens() {
+        let compact = br#"{"z":"a \" b:,[{}]","a":[{},[],{"b":2,"a":1}]}"#;
+        let pretty = pretty_validated_json_bytes(compact);
+        assert_eq!(
+            pretty,
+            br#"{
+  "z": "a \" b:,[{}]",
+  "a": [
+    {},
+    [],
+    {
+      "b": 2,
+      "a": 1
+    }
+  ]
+}"#
+        );
+        assert_eq!(
+            serde_json::from_slice::<Value>(&pretty).unwrap(),
+            serde_json::from_slice::<Value>(compact).unwrap()
+        );
     }
 }
