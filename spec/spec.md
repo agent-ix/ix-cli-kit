@@ -35,6 +35,8 @@ credential extension. FR-014, FR-015 and NFR-004 are implemented behind the
 off-by-default `secrets` feature; FR-016 describes separate downstream consumer
 adoption work. FR-017 specifies the caller-owned exit-code pass-through implemented in
 this crate, leaving the five-member `Outcome` taxonomy unchanged.
+FR-018 specifies install-channel detection and package-manager dispatch behind the
+default-off `self-update` feature.
 
 ---
 
@@ -56,6 +58,8 @@ this crate, leaving the five-member `Outcome` taxonomy unchanged.
 - App-scoped OS credential-store operations, secret-source precedence and reporting,
   non-disclosure, and `branch = "main"` adoption by `ix-projects` and one Rust CLI,
   with the resolved commit recorded in each consumer's `Cargo.lock`.
+- Consumer-configured self-update through npm or Cargo, behind the default-off
+  `self-update` feature.
 
 ### 2.2 Out of Scope
 
