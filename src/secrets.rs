@@ -198,6 +198,30 @@ pub enum SecretError {
     /// No supported operating-system credential store is available.
     #[error("operating-system credential store is unavailable")]
     Unavailable,
+    /// The native store is missing or unavailable.
+    #[error("operating-system credential store is unavailable (OS status {code})")]
+    NativeUnavailable {
+        /// The native OS status.
+        code: i32,
+    },
+    /// The OS denied this executable access to the credential.
+    #[error("operating-system credential access denied (OS status {code})")]
+    AccessDenied {
+        /// The native OS status; never contains a secret or backend message.
+        code: i32,
+    },
+    /// The OS requires an interactive unlock or approval.
+    #[error("operating-system credential access requires interaction (OS status {code})")]
+    InteractionRequired {
+        /// The native OS status.
+        code: i32,
+    },
+    /// An unclassified native credential failure with its safe numeric status.
+    #[error("operating-system credential operation failed (OS status {code})")]
+    Platform {
+        /// The native OS status.
+        code: i32,
+    },
     /// The credential backend failed for another reason.
     #[error("operating-system credential operation failed")]
     BackendFailure,
@@ -335,10 +359,41 @@ fn os_entry(scope: &AppScope, key: &SecretKey) -> Result<keyring::Entry, SecretE
 
 #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
 fn map_keyring_error(error: &keyring::Error) -> SecretError {
+    #[cfg(target_os = "macos")]
+    if let keyring::Error::PlatformFailure(cause) | keyring::Error::NoStorageAccess(cause) = error
+        && let Some(native) = cause.downcast_ref::<security_framework::base::Error>()
+    {
+        let code = native.code();
+        return match code {
+            -25293 | -25292 => SecretError::AccessDenied { code },
+            -25308 => SecretError::InteractionRequired { code },
+            -25291 | -25294 | -25295 => SecretError::NativeUnavailable { code },
+            _ => SecretError::Platform { code },
+        };
+    }
     match error {
         keyring::Error::NoStorageAccess(_) => SecretError::Locked,
         keyring::Error::PlatformFailure(_) => SecretError::Unavailable,
         _ => SecretError::BackendFailure,
+    }
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod native_error_tests {
+    use super::{SecretError, map_keyring_error};
+
+    /// Trace: FR-014-AC-7
+    #[test]
+    fn native_keychain_statuses_remain_distinguishable_without_backend_text() {
+        for (code, expected) in [
+            (-25293, SecretError::AccessDenied { code: -25293 }),
+            (-25308, SecretError::InteractionRequired { code: -25308 }),
+            (-25291, SecretError::NativeUnavailable { code: -25291 }),
+            (-50, SecretError::Platform { code: -50 }),
+        ] {
+            let error = keyring::macos::decode_error(security_framework::base::Error::from(code));
+            assert_eq!(map_keyring_error(&error), expected);
+        }
     }
 }
 

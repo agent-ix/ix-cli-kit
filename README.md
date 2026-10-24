@@ -131,3 +131,13 @@ Contributions follow the [canonical Agent IX CLA](CLA.md) and
 [content rights policy](CONTENT_RIGHTS.md). See [Contributing](CONTRIBUTING.md)
 for development and signing instructions. Community discussion is on
 [Agent IX Discord](https://discord.gg/k8DVhuYBR2).
+
+### Native credential diagnostics
+
+The secrets feature reports macOS credential errors using typed categories and
+safe numeric OS statuses. Authentication denial is `AccessDenied`, interaction
+required is `InteractionRequired`, a missing or unavailable store is
+`NativeUnavailable`, and other native failures are `Platform`. Unknown backend
+text is never exposed. Non-macOS adapters retain their portable error categories.
+Consumers should report the typed cause and an appropriate recovery action;
+credential access failure is not an absent credential.

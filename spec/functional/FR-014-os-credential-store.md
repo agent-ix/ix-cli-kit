@@ -62,6 +62,7 @@ secret values through the operating system's credential store.
 | FR-014-AC-4 | Status reports presence without returning a value; empty, uppercase, Unicode, colon-bearing, empty-component scope (such as `a//b`), slash-bearing key, or unrepresentable scope/key input is rejected before a backend call. | Test |
 | FR-014-AC-5 | CI runs a get/set/status/delete integration test against Keychain on macOS, a provisioned Secret Service session on Linux, and Credential Manager on Windows. Each job fails if its expected adapter is unavailable or the round-trip fails. | Test |
 | FR-014-AC-6 | A target without a supported backend reports the unavailable variant; the default-feature dependency graph contains no OS credential backend. | Test |
+| FR-014-AC-7 | macOS failures preserve their numeric OS status and distinguish access denial, required interaction, unavailable storage, and other platform failure without backend message text or secret values. | Test |
 
 ## Dependencies
 
