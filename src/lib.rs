@@ -13,7 +13,7 @@
 //! | `self_update` (opt-in) | install-channel detection and package-manager dispatch |
 //! | [`version`] | build-time source provenance, and the agreement assertion |
 //! | [`config`] | the precedence ORDER — flag > env > file > default, and unioned search paths |
-//! | [`secrets`] | opt-in OS credential storage and secret-source precedence |
+//! | `secrets` | opt-in OS credential storage and secret-source precedence |
 //!
 //! [`config`] owns the order and never the locations: the ecosystem's default
 //! module root is `~/.ix/filament/modules`, and a shared crate that decided
