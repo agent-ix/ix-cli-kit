@@ -20,3 +20,9 @@ Ticket: PLAT-1730. Reviewed agent-ix/ix-cli-kit#16 at head 6ca473bc92b3f7b8219a5
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | low | The two feature-gated rows mark opt-in differently: `self_update` carries "(opt-in)" in the module column, `secrets` only says "opt-in" in the description column | src/lib.rs:16 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Fixed in 4b27937509dffa8a1d519fa479eaefdd03cfcd54: `secrets` row now reads `secrets` (opt-in) in the module column, matching `self_update` |
