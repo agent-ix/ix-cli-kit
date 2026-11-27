@@ -613,7 +613,7 @@ mod tests {
             SearchPath::new()
                 .push_if_dir("/definitely/not/here")
                 .roots(),
-            []
+            &[] as &[PathBuf]
         );
     }
 
@@ -644,7 +644,7 @@ mod tests {
     fn an_unset_variable_contributes_nothing_and_deprecates_nothing() {
         let path =
             SearchPath::new().push_envs(&[EnvVar::legacy("IX_CLI_RS_NO_SUCH_VAR", "IX_OTHER")]);
-        assert_eq!(path.roots(), []);
+        assert_eq!(path.roots(), &[] as &[PathBuf]);
         assert_eq!(path.deprecations(), []);
     }
 
