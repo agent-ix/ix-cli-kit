@@ -609,11 +609,11 @@ mod tests {
     fn an_explicit_root_is_kept_even_when_it_does_not_exist() {
         let path = SearchPath::new().push("/definitely/not/here");
         assert_eq!(path.roots().len(), 1);
-        assert!(
+        assert_eq!(
             SearchPath::new()
                 .push_if_dir("/definitely/not/here")
-                .roots()
-                .is_empty()
+                .roots(),
+            &[] as &[PathBuf]
         );
     }
 
@@ -644,8 +644,8 @@ mod tests {
     fn an_unset_variable_contributes_nothing_and_deprecates_nothing() {
         let path =
             SearchPath::new().push_envs(&[EnvVar::legacy("IX_CLI_RS_NO_SUCH_VAR", "IX_OTHER")]);
-        assert!(path.roots().is_empty());
-        assert!(path.deprecations().is_empty());
+        assert_eq!(path.roots(), &[] as &[PathBuf]);
+        assert_eq!(path.deprecations(), []);
     }
 
     /// Trace: FR-011-AC-1
